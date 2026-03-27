@@ -33,8 +33,8 @@ El objetivo principal es desarrollar una aplicación funcional, intuitiva y efic
 
 - **Esteban Amores Barrantes**  
 - **Marco Campos Torres**  
-- **Jorjan Alvarez**  
-- **Laura Montero**  
-- **Carlos Arias**  
+- **Jorjan Alvarez Alvarado**   
+- **Laura Montero Carvajal**   
+- **Carlos Andrés Arias Miranda**  
 
 ---
