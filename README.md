@@ -32,8 +32,8 @@ El objetivo principal es desarrollar una aplicación funcional, intuitiva y efic
 ## Integrantes del Equipo
 
 - **Esteban Amores**  
-- **Marco Campos**  
-- **Jorjan Alvarez**  
+- **Marco Campos Torres**  
+- **Jorjan Alvarez Alvarado**   
 - **Laura Montero Carvajal**  
 - **Carlos Arias**  
 
