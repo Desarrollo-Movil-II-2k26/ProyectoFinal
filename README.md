@@ -106,7 +106,7 @@ El proyecto está organizado siguiendo buenas prácticas de desarrollo:
 
 ### Posible Estructura
 ```
-medieval_dice_game/
+MindDice/
 ├── android/                          # Configuración nativa Android
 ├── ios/                              # Configuración nativa iOS
 ├── localStorage/
