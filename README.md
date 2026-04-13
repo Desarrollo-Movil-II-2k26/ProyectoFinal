@@ -107,71 +107,65 @@ El proyecto está organizado siguiendo buenas prácticas de desarrollo:
 ### Posible Estructura
 ```
 MindDice/
-├── android/                          # Configuración nativa Android
-├── ios/                              # Configuración nativa iOS
-├── localStorage/
-│   └── NativeLocalStorage.tsx        # Manejo de almacenamiento local (tokens, sesión)
+├── android/
+├── ios/
 ├── src/
-│   ├── assets/                      # Recursos visuales
-│   │   ├── images/                  # Dados, UI medieval, prisión
+│   ├── assets/
+│   │   ├── images/
 │   │   ├── icons/
-│   │   └── sounds/                  # (opcional: sonidos de dados)
-│   ├── components/                  # Componentes reutilizables
-│   │   ├── config/
-│   │   │   └── SocketConfig.ts      # Configuración WebSocket
-│   │   ├── common/                  # Componentes genéricos
+│   │   └── sounds/
+│   │
+│   ├── components/
+│   │   ├── common/
 │   │   │   ├── Button.tsx
 │   │   │   ├── Card.tsx
 │   │   │   ├── Modal.tsx
 │   │   │   └── Loader.tsx
-│   │   ├── game/                    # Componentes específicos del juego
-│   │   │   ├── DiceComponent.tsx            # Render de un dado
-│   │   │   ├── DiceRoller.tsx               # Tirar dados
-│   │   │   ├── DiceSelector.tsx             # Seleccionar 3 dados
-│   │   │   ├── HiddenDice.tsx               # Dados ocultos (rojo/azul)
-│   │   │   ├── CombinationDisplay.tsx       # Muestra jugada (triple, doble, etc)
-│   │   │   ├── ScoreBoard.tsx               # Puntajes en vivo
-│   │   │   ├── TurnIndicator.tsx            # De quién es el turno
-│   │   │   └── PredictionCardSelector.tsx   # Selección de predicción
-│   │   ├── lobby/
-│   │   │   ├── PlayerList.tsx       # Lista de jugadores
-│   │   │   ├── RoomStatus.tsx       # Estado de la sala
-│   │   │   └── StartGameButton.tsx
-│   │   ├── layout/
-│   │   │   ├── Header.tsx
-│   │   │   └── Footer.tsx
-│   │   └── auth/
-│   │       └── LoginComponent.tsx
-│   ├── services/                   # Lógica de conexión y datos
-│   │   ├── api/
-│   │   │   └── GameService.ts       # (opcional REST)
-│   │   ├── socket/
-│   │   │   ├── SocketService.ts     # Conexión WebSocket
-│   │   │   └── GameSocketEvents.ts  # Eventos (turnos, tiradas, etc)
+│   │   │
 │   │   ├── game/
-│   │   │   ├── GameEngine.ts        # LÓGICA CENTRAL DEL JUEGO
-│   │   │   ├── ScoreCalculator.ts   # Cálculo de puntos
-│   │   │   ├── CombinationChecker.ts # Detecta triple, doble, escalera
-│   │   │   ├── TurnManager.ts       # Manejo de turnos
-│   │   │   └── PredictionService.ts # Validación de predicciones
-│   │   └── storage/
-│   │       └── LocalStorageService.ts
-│   ├── store/                      # Manejo de estado global
-│   │   ├── GameStore.ts            # Estado del juego
-│   │   ├── PlayerStore.ts          # Jugadores
-│   │   └── SocketStore.ts
+│   │   │   ├── DiceComponent.tsx         # Renderiza UN dado visualmente
+│   │   │   ├── DiceGrid.tsx              # Muestra los 9 dados blancos
+│   │   │   ├── HiddenDice.tsx            # Muestra rojo y azul (solo al dueño)
+│   │   │   ├── DiceSelector.tsx          # UI para marcar 3 dados a jugar
+│   │   │   ├── CombinationDisplay.tsx    # Muestra "Triple", "Escalera", etc
+│   │   │   ├── PredictionCardSelector.tsx# Botones ZERO/MIN/MORE/MAX
+│   │   │   ├── ScoreBoard.tsx            # Tabla de puntajes recibida del server
+│   │   │   └── TurnIndicator.tsx         # "Turno de: Carlos"
+│   │   │
+│   │   ├── lobby/
+│   │   │   ├── PlayerList.tsx
+│   │   │   ├── RoomCode.tsx              # Muestra el código tipo "ABCD"
+│   │   │   └── StartGameButton.tsx       # Solo visible para el líder
+│   │   │
+│   │   └── layout/
+│   │       ├── Header.tsx
+│   │       └── MedievalBackground.tsx    # Fondo temático reutilizable
+│   │
+│   ├── services/
+│   │   └── socket/
+│   │       ├── SocketService.ts          # Conexión WebSocket, reconexión
+│   │       └── MessageHandler.ts         # Parsea JSON del server → store
+│   │
+│   ├── store/                            # Estado global (lo que llegó del server)
+│   │   ├── gameStore.ts                  # phase, round, turn_order, etc
+│   │   ├── playerStore.ts                # jugadores, puntajes, dados
+│   │   └── socketStore.ts                # estado conexión (conectado/reconectando)
+│   │
+│   ├── types/
+│   │   └── GameTypes.ts                  # Tipos TypeScript que espejean los structs Rust
+│   │
 │   ├── styles/
 │   │   ├── GlobalStyles.ts
-│   │   ├── GameStyles.ts
-│   │   └── Theme.ts                # 🎨 medieval/prisión
-│   └── views/                      # Pantallas principales
-│       ├── LoginView.tsx
-│       ├── LobbyView.tsx           # Sala de espera
-│       ├── GameView.tsx            # Pantalla principal del juego
-│       ├── DiceSelectionView.tsx   # Selección de jugadas
-│       ├── ResultView.tsx          # Resultados de ronda
-│       └── ScoreboardView.tsx      # Puntajes finales
+│   │   └── Theme.ts
+│   │
+│   └── views/
+│       ├── HomeView.tsx                  # Crear o unirse a sala
+│       ├── LobbyView.tsx                 # Sala de espera
+│       ├── GameView.tsx                  # Pantalla principal durante la partida
+│       ├── DiceSelectionView.tsx         # Cuando es tu turno de seleccionar
+│       ├── RoundResultView.tsx           # Resultados + predicciones al fin de ronda
+│       └── FinalScoreView.tsx            # Pantalla de ganador
+│
 ├── App.tsx
-├── package.json
-
+└── package.json
 ```
