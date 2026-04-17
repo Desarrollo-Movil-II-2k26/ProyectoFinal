@@ -143,19 +143,19 @@ MindDice/
 │   │
 │   ├── services/
 │   │   └── socket/
-│   │       ├── SocketService.ts          # Conexión WebSocket, reconexión
-│   │       └── MessageHandler.ts         # Parsea JSON del server → store
+│   │       ├── SocketService.tsx         # Conexión WebSocket, reconexión
+│   │       └── MessageHandler.tsx        # Parsea JSON del server → store
 │   │
 │   ├── store/                            # Estado global (lo que llegó del server)
-│   │   ├── gameStore.ts                  # phase, round, turn_order, etc
-│   │   ├── playerStore.ts                # jugadores, puntajes, dados
-│   │   └── socketStore.ts                # estado conexión (conectado/reconectando)
+│   │   ├── gameStore.tsx                 # phase, round, turn_order, etc
+│   │   ├── playerStore.tsx                # jugadores, puntajes, dados
+│   │   └── socketStore.tsx                # estado conexión (conectado/reconectando)
 │   │
 │   ├── types/
-│   │   └── GameTypes.ts                  # Tipos TypeScript que espejean los structs Rust
+│   │   └── GameTypes.tsx               # Tipos TypeScript que espejean los structs Rust
 │   │
 │   ├── styles/
-│   │   ├── GlobalStyles.ts
+│   │   ├── GlobalStyles.tsx
 │   │   └── Theme.ts
 │   │
 │   └── views/
