@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
+import {Text, StyleSheet, SafeAreaView } from 'react-native';
 import MedievalBackground from '../layout/MedievalBackground';
 import Header from '../layout/Header';
 import Card from '../components/common/Card';

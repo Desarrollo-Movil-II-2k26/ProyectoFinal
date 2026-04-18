@@ -12,16 +12,12 @@ interface Props {
 export default function Header({ title, subtitle, onBack, onExit }: Props) {
   return (
     <View style={styles.container}>
-      {/* Izquierda */}
+      {/* Izquierda*/}
       {onBack ? (
         <TouchableOpacity onPress={onBack} style={styles.side}>
-          <Text style={styles.backText}>← VOLVER</Text>
+          <Text style={styles.backText}> ← VOLVER</Text>
         </TouchableOpacity>
-      ) : (
-        <View style={[styles.side, styles.shield, { backgroundColor: '#1a3a8a' }]}>
-          <Text style={styles.shieldIcon}>⚔</Text>
-        </View>
-      )}
+      ) : null}
 
       {/* Centro */}
       <View style={styles.center}>
@@ -29,7 +25,7 @@ export default function Header({ title, subtitle, onBack, onExit }: Props) {
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       </View>
 
-      {/* Derecha */}
+      {/* Derecha 
       {onExit ? (
         <TouchableOpacity
           onPress={onExit}
@@ -39,7 +35,7 @@ export default function Header({ title, subtitle, onBack, onExit }: Props) {
         </TouchableOpacity>
       ) : (
         <View style={styles.side} />
-      )}
+      )}*/}
     </View>
   );
 }

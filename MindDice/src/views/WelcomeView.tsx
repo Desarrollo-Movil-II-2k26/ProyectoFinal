@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity,
+  View, Text, TextInput,
   StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, ImageBackground,
 } from 'react-native';
 import MedievalBackground from '../layout/MedievalBackground';

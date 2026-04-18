@@ -27,7 +27,7 @@ export default function HomeView({ playerName, onCrearSala, onUnirse, onVerRegla
         <Header title={`¡Bienvenido, ${playerName}!`} />
 
     <TouchableOpacity style={styles.cornerTL} onPress={() => console.log('perfil')}>
-    <Image source={require('../assets/images/bg_profile.png')} style={{ width: 80, height: 80 }} />
+      <Image source={require('../assets/images/bg_profile.png')} style={{ width: 80, height: 80 }} />
     </TouchableOpacity>
 
     <TouchableOpacity style={styles.cornerTR} onPress={onSalir}>
