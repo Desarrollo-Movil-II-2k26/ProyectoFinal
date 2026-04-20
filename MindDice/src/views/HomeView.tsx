@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Image
+  View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Image, ImageBackground
 } from 'react-native';
 import MedievalBackground from '../layout/MedievalBackground';
 import Header from '../layout/Header';
-import Button from '../components/common/Button';
 import Card from '../components/common/Card';
 import { COLORS, FONTS } from '../styles/Theme';
 import { G } from '../styles/GlobalStyles';
@@ -23,28 +22,52 @@ export default function HomeView({ playerName, onCrearSala, onUnirse, onVerRegla
   return (
     <MedievalBackground variant="home">
       <SafeAreaView style={[G.safe, { paddingBottom: 72 }]}>
-        
-        <Header title={`¡Bienvenido, ${playerName}!`} />
 
-    <TouchableOpacity style={styles.cornerTL} onPress={() => console.log('perfil')}>
-      <Image source={require('../assets/images/bg_profile.png')} style={{ width: 80, height: 80 }} />
-    </TouchableOpacity>
+        <View style={{ marginTop: 40 }}>
+          <Header title={`¡Bienvenido, ${playerName}!`} />
+        </View>
+      
 
-    <TouchableOpacity style={styles.cornerTR} onPress={onSalir}>
-      <Image source={require('../assets/images/bg_exit.png')} style={{ width: 80, height: 80 }} />
-    </TouchableOpacity>
+        <View style={styles.cornerTL}>
+          <Image source={require('../assets/images/bg_profile.png')} style={{ width: 80, height: 80 }} />
+        </View>
+
+        {/* Ícono de perfil — decorativo, sin funcionalidad */}
+        <View style={styles.cornerTL}>
+          <Image source={require('../assets/images/bg_profile.png')} style={{ width: 80, height: 80 }} />
+        </View>
+
+        <TouchableOpacity style={styles.cornerTR} onPress={onSalir}>
+          <Image source={require('../assets/images/bg_exit.png')} style={{ width: 80, height: 80 }} />
+        </TouchableOpacity>
 
         {/* Panel dados */}
         <View style={styles.diceCard}>
-          <Text style={styles.panelTitle}>PARTIDA DE DADOS</Text>
-          <View style={styles.diceBox}>
-            <Image source={require('../assets/images/bg_playmode.png')} style={{ width: 130, height: 220 }} />
+          <View style={styles.imageContainer}>
+            <Image
+              source={require('../assets/images/bg_playmode.png')}
+              style={styles.diceImage}
+              resizeMode="contain"
+            />
+            <Text style={[styles.panelTitle, styles.overlayTop]}>
+              PARTIDA DE DADOS
+            </Text>
+            <Text style={[styles.panelTitle, styles.overlayBottom]}>
+              MODO CLÁSICO
+            </Text>
           </View>
-          <Text style={styles.panelTitle}>MODO CLÁSICO</Text>
-        </View>   
+        </View>
 
         {/* Botón crear sala */}
-        <Button label="CREAR SALA" onPress={onCrearSala} style={styles.createBtn} />
+        <TouchableOpacity style={styles.createBtn} onPress={onCrearSala} activeOpacity={0.85}>
+          <ImageBackground
+            source={require('../assets/images/bg_createroom.png')}
+            style={styles.createBtnImage}
+            resizeMode="stretch"
+          >
+            <Text style={styles.createBtnText}>CREAR SALA</Text>
+          </ImageBackground>
+        </TouchableOpacity>
 
         {/* Unirse a sala */}
         <Card style={styles.joinCard}>
@@ -70,10 +93,14 @@ export default function HomeView({ playerName, onCrearSala, onUnirse, onVerRegla
         </Card>
 
         {/* Navbar inferior */}
-        <View style={styles.navbar}>
+        <ImageBackground
+          source={require('../assets/images/bg_navigationhome.png')}
+          style={styles.navbar}
+          resizeMode="stretch"
+        >
           <NavBtn icon="🏠" label="HOME"   onPress={() => {}} />
           <NavBtn icon="📖" label="REGLAS" onPress={onVerReglas} />
-        </View>
+        </ImageBackground>
 
       </SafeAreaView>
     </MedievalBackground>
@@ -90,12 +117,9 @@ function NavBtn({ icon, label, onPress }: { icon: string; label: string; onPress
 }
 
 const styles = StyleSheet.create({
-  diceCard:   { alignItems: 'center', marginTop: 200, marginHorizontal: 16 },
-  panelTitle: { color: COLORS.gold, fontSize: FONTS.sizes.lg, letterSpacing: 3, fontWeight: '700', marginBottom: 14 },
-  diceBox:    { backgroundColor: 'rgba(10,6,2,0.8)', borderWidth: 2, borderColor: '#6a5028', borderRadius: 4, padding: 12, width: '100%', alignItems: 'center', marginBottom: 12 },
-  diceRow:    { fontSize: 22, letterSpacing: 5, marginVertical: 2 },
-  modoText:   { color: COLORS.gold_muted, fontSize: FONTS.sizes.md, letterSpacing: 3, fontWeight: '700' },
-  createBtn:  { marginHorizontal: 16, marginBottom: 12, marginTop: 30 },
+  diceImage:  { width: 300, height: 400 },
+  panelTitle: { color: COLORS.gold, fontSize: FONTS.sizes.lg, letterSpacing: 3, fontWeight: '700', marginBottom: 14, marginVertical: 8, textAlign: 'center' },
+  createBtn:  { marginBottom: 12, marginTop: -30, alignSelf: 'flex-end', marginRight: 60, width: '60%', aspectRatio: 3 },
   joinCard:   { paddingVertical: 14, marginHorizontal: 16, marginTop: 12 },
   joinLabel:  { color: COLORS.gold_muted, fontSize: FONTS.sizes.xs, letterSpacing: 2, marginBottom: 8 },
   joinRow:    { flexDirection: 'row', gap: 10, alignItems: 'center' },
@@ -112,19 +136,49 @@ const styles = StyleSheet.create({
   joinBtnText: {
     color: '#1a1208', fontSize: FONTS.sizes.sm, fontWeight: '700', letterSpacing: 1,
   },
-  navbar:   { position: 'absolute', bottom: 0, left: 0, right: 0, height: 72, backgroundColor: 'rgba(18,12,4,0.97)', borderTopWidth: 2, borderTopColor: '#4a3818', flexDirection: 'row' },
-  navItem:  { flex: 1, alignItems: 'center', justifyContent: 'center', borderRightWidth: 1, borderRightColor: '#3a2a10' },
+  navbar:   { position: 'absolute', bottom: -10, left: -10, right: -10, height: 90, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' },
+  navItem:  { flex: 1, alignItems: 'center', justifyContent: 'center' },
   navIcon:  { fontSize: 24 },
   navLabel: { fontSize: FONTS.sizes.xs, color: COLORS.gold_muted, letterSpacing: 1, marginTop: 4 },
-
   cornerTL: {
-  position: 'absolute', top: 0, left: 5,
-  width: 80, height: 80,
-},
-cornerTR: {
-  position: 'absolute', top: 0, right: 5,
-  width: 80, height: 80,
-  transform: [{ scaleX: -1 }],  
-},
-
+    position: 'absolute', top: 20, left: 5,
+    width: 80, height: 80,
+  },
+  cornerTR: {
+    position: 'absolute', top: 20, right: 5,
+    width: 80, height: 80,
+    transform: [{ scaleX: -1 }],
+  },
+  diceCard: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 80,
+    marginHorizontal: 16,
+  },
+  imageContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  overlayTop: {
+    position: 'absolute',
+    top: 137,
+  },
+  overlayBottom: {
+    position: 'absolute',
+    bottom: 56,
+  },
+  createBtnImage: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    paddingLeft: 37,
+  },
+  createBtnText: {
+    color: '#1a1208',
+    fontSize: FONTS.sizes.md,
+    fontWeight: '700',
+    letterSpacing: 2,
+  },
 });

@@ -11,4 +11,5 @@ export const Images = {
   bg_exit: require('./bg_exit.png'),
   bg_playmode: require('./bg_playmode.png'),
   bg_createroom: require('./bg_createroom.png'),
+  bg_navigationhome: require('./bg_navigationhome.png'),
 };

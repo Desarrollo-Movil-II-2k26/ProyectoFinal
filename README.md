@@ -164,6 +164,7 @@ MindDice/
 │       ├── GameView.tsx                  # Pantalla principal durante la partida
 │       ├── DiceSelectionView.tsx         # Cuando es tu turno de seleccionar
 │       ├── RoundResultView.tsx           # Resultados + predicciones al fin de ronda
+        ├── RulesView.tsx                 # Pantalla de las reglas del juego
 │       └── FinalScoreView.tsx            # Pantalla de ganador
 │
 ├── App.tsx
