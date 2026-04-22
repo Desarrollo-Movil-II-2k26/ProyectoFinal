@@ -14,6 +14,7 @@ import {
   RoundScoreEntry,
   FinalScoreEntry,
   ServerMessage,
+  Shape,
 } from '../types/GameTypes';
 
 // ── Estado global ─────────────────────────────────────────────
@@ -38,6 +39,7 @@ interface GameState {
   roundResult: RoundScoreEntry[] | null;
   gameOver: { finalScores: FinalScoreEntry[]; winnerName: string } | null;
   error: string | null;
+  playerShapes: Record<string, Shape>;  
 }
 
 const initialState: GameState = {
@@ -55,6 +57,7 @@ const initialState: GameState = {
   roundResult: null,
   gameOver: null,
   error: null,
+  playerShapes: {},  
 };
 
 // ── Acciones del reducer ──────────────────────────────────────
@@ -77,7 +80,8 @@ type Action =
   | { type: 'GAME_OVER'; payload: { finalScores: FinalScoreEntry[]; winnerName: string } }
   | { type: 'SET_ERROR'; payload: string }
   | { type: 'CLEAR_ERROR' }
-  | { type: 'RESET' };
+  | { type: 'RESET' }
+  | { type: 'SET_PLAYER_SHAPE'; payload: { playerId: string; shape: Shape } };  // ← nuevo
 
 function gameReducer(state: GameState, action: Action): GameState {
   switch (action.type) {
@@ -109,7 +113,6 @@ function gameReducer(state: GameState, action: Action): GameState {
         currentTurnPlayerId: action.payload.currentTurnPlayerId,
         players: action.payload.players,
         roomCode: action.payload.roomCode,
-        // Limpiar resultados anteriores al cambiar fase
         playResult: null,
         roundResult: null,
       };
@@ -135,6 +138,15 @@ function gameReducer(state: GameState, action: Action): GameState {
     case 'RESET':
       return { ...initialState, connected: state.connected };
 
+    case 'SET_PLAYER_SHAPE':  
+      return {
+        ...state,
+        playerShapes: {
+          ...state.playerShapes,
+          [action.payload.playerId]: action.payload.shape,
+        },
+      };
+
     default:
       return state;
   }
@@ -152,6 +164,7 @@ interface GameContextValue {
   selectDice: (whiteIndices: number[], useRed: boolean, useBlue: boolean) => void;
   clearError: () => void;
   resetGame: () => void;
+  setPlayerShape: (playerId: string, shape: Shape) => void;  // ← nuevo
 }
 
 const GameContext = createContext<GameContextValue | null>(null);
@@ -161,7 +174,6 @@ const GameContext = createContext<GameContextValue | null>(null);
 export function GameProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(gameReducer, initialState);
 
-  // Escuchar mensajes del servidor
   useEffect(() => {
     const unsubscribe = socketService.onMessage((message: ServerMessage) => {
       switch (message.type) {
@@ -226,14 +238,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
     return unsubscribe;
   }, []);
-  
-  // Conexión automática al iniciar la app
+
   useEffect(() => {
     socketService.connect()
       .then(() => dispatch({ type: 'SET_CONNECTED', payload: true }))
       .catch(() => dispatch({ type: 'SET_CONNECTED', payload: false }));
 
-    // Detectar desconexión
     return () => {
       socketService.disconnect();
     };
@@ -280,6 +290,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'RESET' });
   }, []);
 
+  const setPlayerShape = useCallback((playerId: string, shape: Shape) => {  
+    dispatch({ type: 'SET_PLAYER_SHAPE', payload: { playerId, shape } });
+  }, []);
+
   return (
     <GameContext.Provider value={{
       state,
@@ -291,6 +305,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       selectDice,
       clearError,
       resetGame,
+      setPlayerShape,  
     }}>
       {children}
     </GameContext.Provider>

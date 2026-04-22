@@ -8,9 +8,10 @@ import {
   Animated,
   Easing,
 } from 'react-native';
+import { Shape } from '../../types/GameTypes';
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
-export type Shape = 'circle' | 'diamond' | 'square' | 'triangle';
+export type { Shape };
 
 interface ShapeOption {
   key:   Shape;
@@ -47,9 +48,9 @@ function ShapeIcon({ shape, size = 72, color }: { shape: Shape; size?: number; c
 
 // ── Props ────────────────────────────────────────────────────────────────────
 interface Props {
-  visible:    boolean;
-  playerName: string;
-  onConfirm:  (shape: Shape) => void;
+  visible:        boolean;
+  playerName:     string;
+  onConfirm:      (shape: Shape) => void;
 }
 
 // ── Componente ───────────────────────────────────────────────────────────────
@@ -106,7 +107,7 @@ export default function ProfileModal({ visible, playerName, onConfirm }: Props) 
       visible={visible}
       transparent
       animationType="fade"
-      onRequestClose={() => {}} // No se puede cerrar sin elegir
+      onRequestClose={() => {}}
     >
       <View style={styles.overlay}>
         <View style={styles.card}>
@@ -125,7 +126,6 @@ export default function ProfileModal({ visible, playerName, onConfirm }: Props) 
                 <Text style={styles.chosenLabel}>{chosenShape.name}</Text>
               </Animated.View>
             ) : (
-              // Figuras en fila mostrando el highlight del azar
               <View style={styles.shapesRow}>
                 {SHAPES.map((s, idx) => (
                   <View

@@ -3,7 +3,7 @@ import { ImageBackground, View, StyleSheet, StatusBar } from 'react-native';
 import { Images } from '../assets/images';
 import { COLORS } from '../styles/Theme';
 
-export type BgVariant = 'welcome' | 'home';
+export type BgVariant = 'welcome' | 'home' | 'game';  ;
 
 interface Props {
   variant?:  BgVariant;
@@ -18,7 +18,7 @@ export default function MedievalBackground({
 }: Props) {
   return (
     <ImageBackground
-      source={variant === 'welcome' ? Images.bg_welcome : Images.bg_home}
+      source={variant === 'welcome' ? Images.bg_welcome : variant === 'game' ? Images.bg_game : Images.bg_home}
       style={styles.bg}
       resizeMode="cover"
     >

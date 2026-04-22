@@ -66,7 +66,8 @@ function AppNavigator() {
             playerName={route.params.playerName}
 
             onCrearSala={async () => {
-              //await connect();
+              //Para conectar con el servidor
+              await connect();
               createRoom(route.params.playerName);
               navigation.navigate('Lobby', {
                 playerName: route.params.playerName,
@@ -75,7 +76,8 @@ function AppNavigator() {
             }}
             
             onUnirse={async (codigo) => {
-              //await connect();
+              //Para conectar con el servidor
+              await connect();
               joinRoom(codigo, route.params.playerName);
               navigation.navigate('Lobby', {
                 playerName: route.params.playerName,
@@ -104,6 +106,10 @@ function AppNavigator() {
             onSalir={() =>
               navigation.navigate('Home', { playerName: route.params.playerName })
             }
+            onVerJuego={() => navigation.navigate('Game', {   // ← AGREGA ESTO
+            playerName: route.params.playerName,
+            roomCode:   state.roomCode ?? route.params.roomCode,
+      })}
           />
         )}
       </Stack.Screen>

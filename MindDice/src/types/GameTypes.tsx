@@ -8,6 +8,7 @@ export type GamePhase =
 
 export type PredictionCard = 'Zero' | 'Min' | 'More' | 'Max';
 export type ComboType = 'Triple' | 'Straight' | 'Pair' | 'None';
+export type Shape = 'circle' | 'diamond' | 'square' | 'triangle';
 
 export interface Player {
   id: string;
