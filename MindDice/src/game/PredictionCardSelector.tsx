@@ -21,7 +21,8 @@ export default function PredictionCardSelector({ onSelect, disabled }: Props) {
   const [chosen, setChosen] = useState<PredictionCard | null>(null);
 
   return (
-<View style={{ padding: 16, backgroundColor: 'rgba(0,0,0,0.6)' }}>      <Text style={styles.title}>ELIGE TU PREDICCIÓN</Text>
+  <View style={{ padding: 16, backgroundColor: 'rgba(0,0,0,0.6)' }}>
+      <Text style={styles.title}>ELIGE TU PREDICCIÓN</Text>
       <Text style={styles.sub}>¿Cuántos puntos crees que harás esta ronda?</Text>
       <View style={styles.grid}>
         {CARDS.map(({ card, label, desc, color }) => (

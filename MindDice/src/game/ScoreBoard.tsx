@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { COLORS, FONTS } from '../styles/Theme';
 import { Player, Shape } from '../types/GameTypes';
 
-// ── ShapeIcon reutilizado ────────────────────────────────────────────────────
+// ── ShapeIcon ────────────────────────────────────────────────────────────────
 function ShapeIcon({ shape, size = 20, color }: { shape: Shape; size?: number; color: string }) {
   if (shape === 'circle') {
     return <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: color }} />;
@@ -14,7 +14,6 @@ function ShapeIcon({ shape, size = 20, color }: { shape: Shape; size?: number; c
   if (shape === 'diamond') {
     return <View style={{ width: size, height: size, backgroundColor: color, transform: [{ rotate: '45deg' }] }} />;
   }
-  // triangle
   return (
     <View style={{
       width: 0, height: 0,
@@ -76,36 +75,34 @@ const tombStyles = StyleSheet.create({
 
 // ── Jugador en la mesa ───────────────────────────────────────────────────────
 function PlayerSlot({
-  player,
-  shape,
-  isMe,
-  hiddenDice,
-  isCurrentTurn,
-  flipped = false,
+  player, shape, isMe, hiddenDice,
+  isCurrentTurn, usedIndices = [],
 }: {
   player:        Player;
   shape:         Shape | null;
   isMe:          boolean;
   hiddenDice:    { red: number; blue: number } | null;
   isCurrentTurn: boolean;
-  flipped?:      boolean;
+  usedIndices?:  number[];
 }) {
   const shapeColor = shape ? SHAPE_COLOR[shape] : '#888';
+
+  // Filtra los dados ya usados
+  const remainingDice = player.white_dice.filter((_, i) => !usedIndices.includes(i));
 
   return (
     <View style={[
       slotStyles.wrap,
       isCurrentTurn && slotStyles.wrapActive,
     ]}>
-      {/* Dados blancos */}
-      <DiceRow dice={player.white_dice} />
+      {/* Dados blancos restantes */}
+      <DiceRow dice={remainingDice} />
 
       {/* Tómbolas ocultas */}
       <HiddenTombs isMe={isMe} hiddenDice={hiddenDice} />
 
       {/* Nombre + figura */}
       <View style={slotStyles.nameRow}>
-        {/* Escudo con figura */}
         <View style={[slotStyles.shield, { borderColor: shapeColor }]}>
           {shape
             ? <ShapeIcon shape={shape} size={14} color={shapeColor} />
@@ -160,20 +157,9 @@ const slotStyles = StyleSheet.create({
     fontWeight:    '700',
     letterSpacing: 1,
   },
-  nameMe: {
-    color: '#c9983a',
-  },
-  turnDot: {
-    width:           6,
-    height:          6,
-    borderRadius:    3,
-    backgroundColor: '#c9983a',
-  },
-  score: {
-    color:     'rgba(201,152,58,0.7)',
-    fontSize:  FONTS.sizes.xs,
-    marginTop: 2,
-  },
+  nameMe:  { color: '#c9983a' },
+  turnDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#c9983a' },
+  score:   { color: 'rgba(201,152,58,0.7)', fontSize: FONTS.sizes.xs, marginTop: 2 },
 });
 
 // ── ScoreBoard principal ─────────────────────────────────────────────────────
@@ -183,23 +169,20 @@ interface Props {
   myPlayerId:          string | null;
   hiddenDice:          { red: number; blue: number } | null;
   currentTurnPlayerId: string;
+  usedDiceIndices?:    Record<string, number[]>;
 }
 
 export default function ScoreBoard({
-  players,
-  playerShapes,
-  myPlayerId,
-  hiddenDice,
-  currentTurnPlayerId,
+  players, playerShapes, myPlayerId,
+  hiddenDice, currentTurnPlayerId, usedDiceIndices = {},
 }: Props) {
-  // Máximo 4 jugadores — posiciones: top-left, top-right, bottom-left, bottom-right
   const top    = players.slice(0, 2);
   const bottom = players.slice(2, 4);
 
   return (
     <View style={tableStyles.table}>
 
-      {/* Fila superior — volteada 180° para que mire hacia el centro */}
+      {/* Fila superior */}
       <View style={tableStyles.rowTop}>
         {top.map(p => (
           <PlayerSlot
@@ -209,13 +192,13 @@ export default function ScoreBoard({
             isMe={p.id === myPlayerId}
             hiddenDice={p.id === myPlayerId ? hiddenDice : null}
             isCurrentTurn={p.id === currentTurnPlayerId}
-            flipped
+            usedIndices={usedDiceIndices[p.id] ?? []}
           />
         ))}
         {top.length < 2 && <View style={{ flex: 1 }} />}
       </View>
 
-      {/* Línea divisoria central */}
+      {/* Línea divisoria */}
       <View style={tableStyles.divider}>
         <View style={tableStyles.dividerLine} />
         <Text style={tableStyles.dividerText}>✦</Text>
@@ -232,6 +215,7 @@ export default function ScoreBoard({
             isMe={p.id === myPlayerId}
             hiddenDice={p.id === myPlayerId ? hiddenDice : null}
             isCurrentTurn={p.id === currentTurnPlayerId}
+            usedIndices={usedDiceIndices[p.id] ?? []}
           />
         ))}
         {bottom.length < 2 && <View style={{ flex: 1 }} />}
@@ -247,27 +231,14 @@ const tableStyles = StyleSheet.create({
     marginTop:        230,
     gap:              8,
   },
-  rowTop: {
-    flexDirection: 'row',
-    gap:           8,
-  },
-  rowBottom: {
-    flexDirection: 'row',
-    gap:           8,
-  },
+  rowTop:    { flexDirection: 'row', gap: 8 },
+  rowBottom: { flexDirection: 'row', gap: 8 },
   divider: {
-    flexDirection:  'row',
-    alignItems:     'center',
-    gap:            8,
+    flexDirection:     'row',
+    alignItems:        'center',
+    gap:               8,
     paddingHorizontal: 16,
   },
-  dividerLine: {
-    flex:            1,
-    height:          1,
-    backgroundColor: 'rgba(201,152,58,0.3)',
-  },
-  dividerText: {
-    color:     'rgba(201,152,58,0.5)',
-    fontSize:  12,
-  },
+  dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(201,152,58,0.3)' },
+  dividerText: { color: 'rgba(201,152,58,0.5)', fontSize: 12 },
 });

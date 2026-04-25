@@ -5,18 +5,18 @@ import Button from '../components/common/Button';
 import DiceGrid from './DiceGrid';
 import HiddenDice from './HiddenDice';
 import { COLORS, FONTS } from '../styles/Theme';
-import { MsgSelectDice } from '../types/GameTypes';
+import { ClientMessage } from '../types/GameTypes';
 
 interface Props {
-  whiteDice:   number[];
-  hiddenDice:  { red: number; blue: number } | null;
-  onConfirm:   (msg: MsgSelectDice) => void;
-}
+  whiteDice:  number[];
+  hiddenDice: { red: number; blue: number } | null;
+    onConfirm:  (msg: ClientMessage) => void;
+  }
 
 export default function DiceSelector({ whiteDice, hiddenDice, onConfirm }: Props) {
   const [whiteSelected, setWhiteSelected] = useState<number[]>([]);
-  const [useRed,  setUseRed]  = useState(false);
-  const [useBlue, setUseBlue] = useState(false);
+  const [useRed,        setUseRed]        = useState(false);
+  const [useBlue,       setUseBlue]       = useState(false);
 
   const totalSelected = whiteSelected.length + (useRed ? 1 : 0) + (useBlue ? 1 : 0);
   const canConfirm    = totalSelected === 3;
@@ -44,6 +44,10 @@ export default function DiceSelector({ whiteDice, hiddenDice, onConfirm }: Props
       use_red:       useRed,
       use_blue:      useBlue,
     });
+    // Limpia selección después de confirmar
+    setWhiteSelected([]);
+    setUseRed(false);
+    setUseBlue(false);
   };
 
   return (
@@ -55,7 +59,8 @@ export default function DiceSelector({ whiteDice, hiddenDice, onConfirm }: Props
           dice={whiteDice}
           selected={whiteSelected}
           onToggle={toggleWhite}
-          disabled={totalSelected >= 3 && whiteSelected.length === 0}
+          disabled={totalSelected >= 3 && !whiteSelected.length}
+          large
         />
       </Card>
 

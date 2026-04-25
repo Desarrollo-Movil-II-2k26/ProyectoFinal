@@ -34,10 +34,10 @@ function AppNavigator() {
 
   // Navegación automática basada en la fase del juego
   useEffect(() => {
-    if (state.phase === 'showing_round_results' && state.roundResult) {
+    if (state.phase === 'ShowingRoundResults' && state.roundResult) {
       navigation.navigate('RoundResult', { round: state.currentRound });
     }
-    if (state.phase === 'game_over' && state.gameOver) {
+    if (state.phase === 'GameOver' && state.gameOver) {
       navigation.navigate('FinalScore', {
         winnerName:  state.gameOver.winnerName,
         finalScores: state.gameOver.finalScores,
@@ -125,15 +125,16 @@ function AppNavigator() {
         )}
       </Stack.Screen>
 
-      <Stack.Screen name="DiceSelection">
+      <Stack.Screen name="DiceSelection"> 
         {({ navigation }) => {
+          const { state, selectDice } = useGame();
           const myPlayer = state.players.find(p => p.id === state.playerId);
+
           return (
             <DiceSelectionView
               whiteDice={myPlayer?.white_dice ?? []}
               hiddenDice={state.hiddenDice}
               onConfirm={(msg) => {
-                const { selectDice } = useGame();
                 selectDice(msg.white_indices, msg.use_red, msg.use_blue);
                 navigation.navigate('Game', {
                   playerName: '',
@@ -165,7 +166,7 @@ function AppNavigator() {
             round={route.params.round}
             scores={state.roundResult ?? []}
             onContinuar={() =>
-              state.phase === 'game_over'
+              state.phase === 'GameOver'
                 ? navigation.navigate('FinalScore', {
                     winnerName:  state.gameOver?.winnerName ?? '',
                     finalScores: state.gameOver?.finalScores ?? [],

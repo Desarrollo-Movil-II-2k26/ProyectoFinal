@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { ScrollView, StyleSheet, SafeAreaView, View, Text, TouchableOpacity, Image } from 'react-native';
 import { useGame } from '../store/GameContext';
 import MedievalBackground from '../layout/MedievalBackground';
@@ -6,33 +6,39 @@ import TurnIndicator from '../game/TurnIndicator';
 import ScoreBoard from '../game/ScoreBoard';
 import PredictionCardSelector from '../game/PredictionCardSelector';
 import CombinationDisplay from '../game/CombinationDisplay';
-import ProfileModal, { Shape } from '../components/common/ProfileModal';
+import ProfileModal from '../components/common/ProfileModal';
 import { G } from '../styles/GlobalStyles';
 import { COLORS, FONTS } from '../styles/Theme';
 import { PredictionCard } from '../types/GameTypes';
 
 interface Props {
   onGoToDiceSelection: () => void;
-  onSalir: () => void;
+  onSalir:             () => void;
 }
 
 export default function GameView({ onGoToDiceSelection, onSalir }: Props) {
-  const { state, makePrediction, setPlayerShape } = useGame();
+  const { state, makePrediction, setPlayerShape, confirmShape } = useGame();
   const {
     phase, currentRound, currentPlay,
     currentTurnPlayerId, players, playerId,
     playResult, hiddenDice, playerShapes,
+    shapeSelected, // ← viene del contexto, persiste aunque se re-renderice
   } = state;
 
   const myPlayer = players.find(p => p.id === playerId) ?? players[0];
   const isMyTurn = currentTurnPlayerId === playerId;
 
-  const [shapeModalVisible, setShapeModalVisible] = useState(true);
-  const [playerShape, setPlayerShapeLocal] = useState<Shape | null>(null);
-
   const handlePrediction = (card: PredictionCard) => {
     makePrediction(card);
   };
+
+  // Calcula dados usados por jugador del playResult
+  const usedDiceIndices: Record<string, number[]> = {};
+  if (playResult) {
+    playResult.forEach(r => {
+      usedDiceIndices[r.player_id] = r.dice_used;
+    });
+  }
 
   return (
     <MedievalBackground variant="game">
@@ -50,23 +56,26 @@ export default function GameView({ onGoToDiceSelection, onSalir }: Props) {
 
         <ScrollView contentContainerStyle={styles.scroll}>
 
-          {/* Mesa */}
+          {/* Mesa con jugadores */}
           <ScoreBoard
             players={players}
             playerShapes={playerShapes}
             myPlayerId={playerId ?? ''}
             hiddenDice={hiddenDice}
             currentTurnPlayerId={currentTurnPlayerId}
+            usedDiceIndices={usedDiceIndices}
           />
 
-          {/* 🔥 PREDICCIONES FORZADAS (SIEMPRE VISIBLES) */}
-          <PredictionCardSelector
-            onSelect={handlePrediction}
-            disabled={false}
-          />
+          {/* Predicciones */}
+          {phase === 'MakingPredictions' && (
+            <PredictionCardSelector
+              onSelect={handlePrediction}
+              disabled={myPlayer?.prediction_made ?? false}
+            />
+          )}
 
           {/* Turno propio */}
-          {phase === 'selecting_dice' && isMyTurn && (
+          {phase === 'SelectingDice' && isMyTurn && (
             <View style={styles.turnCard}>
               <Text style={styles.turnText}>ES TU TURNO</Text>
               <Text style={styles.turnSub}>
@@ -84,14 +93,14 @@ export default function GameView({ onGoToDiceSelection, onSalir }: Props) {
           )}
 
           {/* Esperando */}
-          {phase === 'selecting_dice' && !isMyTurn && (
+          {phase === 'SelectingDice' && !isMyTurn && (
             <View style={styles.waitCard}>
               <Text style={styles.waitText}>ESPERANDO JUGADA...</Text>
             </View>
           )}
 
-          {/* Resultados */}
-          {phase === 'showing_play_results' && playResult && (
+          {/* Resultados jugada */}
+          {phase === 'ShowingPlayResults' && playResult && (
             <View style={styles.resultsCard}>
               <Text style={styles.resultsTitle}>
                 RESULTADO JUGADA {currentPlay - 1}
@@ -110,7 +119,7 @@ export default function GameView({ onGoToDiceSelection, onSalir }: Props) {
 
         </ScrollView>
 
-        {/* Turn indicator */}
+        {/* Animación de turno */}
         <TurnIndicator
           currentTurnPlayerId={currentTurnPlayerId}
           myPlayerId={playerId ?? ''}
@@ -119,14 +128,13 @@ export default function GameView({ onGoToDiceSelection, onSalir }: Props) {
 
       </SafeAreaView>
 
-      {/* Modal figura */}
+      {/* Modal figura — solo aparece UNA VEZ, cuando shapeSelected es false */}
       <ProfileModal
-        visible={shapeModalVisible}
+        visible={!shapeSelected}
         playerName={myPlayer?.name ?? ''}
         onConfirm={(shape) => {
           setPlayerShape(playerId ?? '', shape);
-          setPlayerShapeLocal(shape);
-          setShapeModalVisible(false);
+          confirmShape(); // ← marca en el contexto que ya eligió, nunca más aparece
         }}
       />
 
@@ -137,56 +145,41 @@ export default function GameView({ onGoToDiceSelection, onSalir }: Props) {
 const styles = StyleSheet.create({
   cornerTR: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    zIndex: 100,
+    top:      8,
+    right:    8,
+    zIndex:   100,
   },
   roundInfo: {
-    color: COLORS.gold,
-    fontSize: FONTS.sizes.sm,
-    fontWeight: '700',
+    color:         COLORS.gold,
+    fontSize:      FONTS.sizes.sm,
+    fontWeight:    '700',
     letterSpacing: 2,
-    textAlign: 'center',
-    paddingTop: 12,
+    textAlign:     'center',
+    paddingTop:    12,
     paddingBottom: 4,
   },
   scroll: { paddingBottom: 24, gap: 12 },
   turnCard: {
-    margin: 16,
-    padding: 20,
+    margin:          16,
+    padding:         20,
     backgroundColor: 'rgba(196,168,74,0.12)',
-    borderWidth: 2,
-    borderColor: COLORS.gold,
-    borderRadius: 6,
-    alignItems: 'center',
-    gap: 8,
+    borderWidth:     2,
+    borderColor:     COLORS.gold,
+    borderRadius:    6,
+    alignItems:      'center',
+    gap:             8,
   },
-  turnText: {
-    color: COLORS.gold,
-    fontSize: FONTS.sizes.xl,
-    fontWeight: '700',
-  },
-  turnSub: { color: COLORS.text_muted },
+  turnText:   { color: COLORS.gold, fontSize: FONTS.sizes.xl, fontWeight: '700' },
+  turnSub:    { color: COLORS.text_muted },
   hiddenInfo: { color: COLORS.text_light },
-  turnAction: {
-    marginTop: 12,
-    color: COLORS.gold,
-    fontWeight: '700',
-  },
-  waitCard: {
-    margin: 16,
-    padding: 20,
-    alignItems: 'center',
-  },
-  waitText: { color: COLORS.text_muted },
+  turnAction: { marginTop: 12, color: COLORS.gold, fontWeight: '700' },
+  waitCard:   { margin: 16, padding: 20, alignItems: 'center' },
+  waitText:   { color: COLORS.text_muted },
   resultsCard: {
-    margin: 16,
+    margin:      16,
     borderWidth: 1,
     borderColor: COLORS.gold,
-    padding: 12,
+    padding:     12,
   },
-  resultsTitle: {
-    color: COLORS.gold,
-    textAlign: 'center',
-  },
+  resultsTitle: { color: COLORS.gold, textAlign: 'center' },
 });

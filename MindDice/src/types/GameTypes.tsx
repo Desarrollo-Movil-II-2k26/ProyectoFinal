@@ -1,10 +1,10 @@
 export type GamePhase =
-  | 'waiting_for_players'
-  | 'making_predictions'
-  | 'selecting_dice'
-  | 'showing_play_results'
-  | 'showing_round_results'
-  | 'game_over';
+  | 'WaitingForPlayers'
+  | 'MakingPredictions'
+  | 'SelectingDice'
+  | 'ShowingPlayResults'
+  | 'ShowingRoundResults'
+  | 'GameOver';
 
 export type PredictionCard = 'Zero' | 'Min' | 'More' | 'Max';
 export type ComboType = 'Triple' | 'Straight' | 'Pair' | 'None';
