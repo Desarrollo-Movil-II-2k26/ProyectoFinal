@@ -2,7 +2,8 @@ import React, { useEffect } from 'react';
 import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { GameProvider, useGame } from './src/store/GameContext';
-import { socketService } from './src/services/SocketService'; 
+import { socketService } from './src/services/SocketService';
+import { SelectDiceMessage } from './src/types/GameTypes';
 
 import WelcomeView       from './src/views/WelcomeView';
 import HomeView          from './src/views/HomeView';
@@ -27,27 +28,20 @@ export type RootStack = {
 const Stack = createNativeStackNavigator<RootStack>();
 
 function AppNavigator() {
-  const { state, connect, createRoom, joinRoom, startGame, resetGame } = useGame(); // ← FIX 2: resetGame agregado
+  const { state, connect, createRoom, joinRoom, startGame, resetGame } = useGame();
   const navigation = useNavigation<any>();
 
   useEffect(() => {
     if (
       state.phase === 'MakingPredictions' ||
-      state.phase === 'SelectingDice'
+      state.phase === 'SelectingDice' ||
+      state.phase === 'ShowingPlayResults' ||
+      state.phase === 'ShowingRoundResults' ||
+      state.phase === 'GameOver'
     ) {
       navigation.navigate('Game', {
         playerName: '',
         roomCode:   state.roomCode ?? '',
-      });
-    }
-
-    if (state.phase === 'ShowingRoundResults' && state.roundResult) {
-      navigation.navigate('RoundResult', { round: state.currentRound });
-    }
-    if (state.phase === 'GameOver' && state.gameOver) {
-      navigation.navigate('FinalScore', {
-        winnerName:  state.gameOver.winnerName,
-        finalScores: state.gameOver.finalScores,
       });
     }
   }, [state.phase]);
@@ -72,7 +66,6 @@ function AppNavigator() {
           <HomeView
             playerName={route.params.playerName}
             onCrearSala={async () => {
-              //Para conectar con el servidor
               await connect();
               createRoom(route.params.playerName);
               navigation.navigate('Lobby', {
@@ -81,7 +74,6 @@ function AppNavigator() {
               });
             }}
             onUnirse={async (codigo) => {
-              //Para conectar con el servidor
               await connect();
               joinRoom(codigo, route.params.playerName);
               navigation.navigate('Lobby', {
@@ -91,9 +83,9 @@ function AppNavigator() {
             }}
             onVerReglas={() => navigation.navigate('Rules')}
             onSalir={() => navigation.navigate('Welcome')}
-             onChangeName={(nuevoNombre) => {                          // ← AGREGA ESTO
-             navigation.setParams({ playerName: nuevoNombre });
-      }}
+            onChangeName={(nuevoNombre) => {
+              navigation.setParams({ playerName: nuevoNombre });
+            }}
           />
         )}
       </Stack.Screen>
@@ -112,8 +104,8 @@ function AppNavigator() {
               });
             }}
             onSalir={() => {
-              socketService.leaveRoom(); // ← avisa al servidor que salió de la sala
-              resetGame();              // ← FIX 3: limpia estado local
+              socketService.leaveRoom();
+              resetGame();
               navigation.navigate('Home', { playerName: route.params.playerName });
             }}
             onVerJuego={() => navigation.navigate('Game', {
@@ -144,7 +136,8 @@ function AppNavigator() {
             <DiceSelectionView
               whiteDice={myPlayer?.white_dice ?? []}
               hiddenDice={state.hiddenDice}
-              onConfirm={(msg) => {
+              hiddenDiceUsed={state.hiddenDiceUsed}
+              onConfirm={(msg: SelectDiceMessage) => {
                 selectDice(msg.white_indices, msg.use_red, msg.use_blue);
                 navigation.navigate('Game', {
                   playerName: '',

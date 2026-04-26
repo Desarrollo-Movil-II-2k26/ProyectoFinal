@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ScrollView, StyleSheet, SafeAreaView, View, Text, TouchableOpacity, Image, Modal } from 'react-native';
 import { useGame } from '../store/GameContext';
 import MedievalBackground from '../layout/MedievalBackground';
@@ -17,14 +17,14 @@ interface Props {
 }
 
 export default function GameView({ onGoToDiceSelection, onSalir }: Props) {
-  const { state, makePrediction, setPlayerShape, confirmShape, clearRoundResult } = useGame();
-const {
-  phase, currentRound, currentPlay,
-  currentTurnPlayerId, players, playerId,
-  playResult, roundResult, gameOver,
-  hiddenDice, hiddenDiceUsed,
-  playerShapes, shapeSelected,
-} = state;
+  const { state, makePrediction, setPlayerShape, confirmShape, clearRoundResult, clearPlayResult, leaveRoom } = useGame();
+  const {
+    phase, currentRound, currentPlay,
+    currentTurnPlayerId, players, playerId,
+    playResult, roundResult, gameOver,
+    hiddenDice, hiddenDiceUsed,
+    playerShapes, shapeSelected,
+  } = state;
 
   const myPlayer = players.find(p => p.id === playerId) ?? players[0];
   const isMyTurn = currentTurnPlayerId === playerId;
@@ -40,12 +40,25 @@ const {
     });
   }
 
+  // ── Auto-cierre del modal de jugada a los 3.5 segundos ──
+  useEffect(() => {
+    if (phase === 'ShowingPlayResults' && playResult) {
+      const timer = setTimeout(() => {
+        clearPlayResult();
+      }, 3500);
+      return () => clearTimeout(timer);
+    }
+  }, [phase, playResult]);
+
   return (
     <MedievalBackground variant="game">
       <SafeAreaView style={G.safe}>
 
         {/* Botón salir */}
-        <TouchableOpacity style={styles.cornerTR} onPress={onSalir}>
+        <TouchableOpacity style={styles.cornerTR} onPress={() => {
+          leaveRoom();
+          onSalir();
+        }}>
           <Image source={require('../assets/images/bg_exit.png')} style={{ width: 80, height: 80 }} />
         </TouchableOpacity>
 
@@ -62,7 +75,7 @@ const {
             playerShapes={playerShapes}
             myPlayerId={playerId ?? ''}
             hiddenDice={hiddenDice}
-            hiddenDiceUsed={hiddenDiceUsed} //Dado desaparecen rojo y azul
+            hiddenDiceUsed={hiddenDiceUsed}
             currentTurnPlayerId={currentTurnPlayerId}
             usedDiceIndices={usedDiceIndices}
           />
@@ -82,13 +95,13 @@ const {
               <Text style={styles.turnSub}>
                 Te quedan {myPlayer?.white_dice.length ?? 0} dados blancos
               </Text>
-                {hiddenDice && !(hiddenDiceUsed.red && hiddenDiceUsed.blue) && (
-                  <Text style={styles.hiddenInfo}>
-                    Dados ocultos:{' '}
-                    {!hiddenDiceUsed.red  && <>🔴 {hiddenDice.red} </>}
-                    {!hiddenDiceUsed.blue && <>🔵 {hiddenDice.blue}</>}
-                  </Text>
-                )}
+              {hiddenDice && !(hiddenDiceUsed.red && hiddenDiceUsed.blue) && (
+                <Text style={styles.hiddenInfo}>
+                  Dados ocultos:{' '}
+                  {!hiddenDiceUsed.red  && <>🔴 {hiddenDice.red} </>}
+                  {!hiddenDiceUsed.blue && <>🔵 {hiddenDice.blue}</>}
+                </Text>
+              )}
               <Text style={styles.turnAction} onPress={onGoToDiceSelection}>
                 SELECCIONAR DADOS →
               </Text>
@@ -132,7 +145,7 @@ const {
 
       </SafeAreaView>
 
-      {/* Modal figura — solo aparece UNA VEZ */}
+      {/* Modal figura */}
       <ProfileModal
         visible={!shapeSelected}
         playerName={myPlayer?.name ?? ''}
@@ -142,7 +155,7 @@ const {
         }}
       />
 
-      {/* Modal resultados de jugada */}
+      {/* Modal resultados de jugada — se cierra solo a los 3.5s */}
       <Modal
         visible={phase === 'ShowingPlayResults' && !!playResult}
         transparent
@@ -171,6 +184,8 @@ const {
                 pointsEarned={r.points_earned}
               />
             ))}
+
+            <Text style={styles.autoCloseText}>Cerrando automáticamente...</Text>
 
           </View>
         </View>
@@ -297,6 +312,13 @@ const styles = StyleSheet.create({
     backgroundColor:  'rgba(201,152,58,0.3)',
     marginHorizontal: 16,
     marginBottom:     8,
+  },
+  autoCloseText: {
+    color:      COLORS.text_muted,
+    fontSize:   FONTS.sizes.xs,
+    textAlign:  'center',
+    fontStyle:  'italic',
+    marginTop:  8,
   },
   corner: {
     position:    'absolute',

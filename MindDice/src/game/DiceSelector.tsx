@@ -6,13 +6,13 @@ import DiceGrid from './DiceGrid';
 import HiddenDice from './HiddenDice';
 import { COLORS, FONTS } from '../styles/Theme';
 import { ClientMessage } from '../types/GameTypes';
+import { SelectDiceMessage } from '../types/GameTypes';
 
 interface Props {
-  whiteDice:  number[];
-  hiddenDice: { red: number; blue: number } | null;
-  /** Dados ocultos ya consumidos en la ronda actual */
+  whiteDice:       number[];
+  hiddenDice:      { red: number; blue: number } | null;
   hiddenDiceUsed?: { red: boolean; blue: boolean };
-  onConfirm:  (msg: ClientMessage) => void;
+  onConfirm:       (msg: SelectDiceMessage) => void;
 }
 
 export default function DiceSelector({

@@ -9,6 +9,7 @@ export type GamePhase =
 export type PredictionCard = 'Zero' | 'Min' | 'More' | 'Max';
 export type ComboType = 'Triple' | 'Straight' | 'Pair' | 'None';
 export type Shape = 'circle' | 'diamond' | 'square' | 'triangle';
+export type SelectDiceMessage = { type: 'select_dice'; white_indices: number[]; use_red: boolean; use_blue: boolean };
 
 export interface Player {
   id: string;

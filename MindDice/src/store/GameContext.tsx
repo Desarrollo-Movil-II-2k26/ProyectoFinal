@@ -81,6 +81,7 @@ type Action =
   | { type: 'RESET' }
   | { type: 'SET_PLAYER_SHAPE';        payload: { playerId: string; shape: Shape } }
   | { type: 'CLEAR_ROUND_RESULT' }
+  | { type: 'CLEAR_PLAY_RESULT' }
   | { type: 'SET_SHAPE_SELECTED' }
   | { type: 'MARK_HIDDEN_DICE_USED';   payload: { useRed: boolean; useBlue: boolean } }
   | { type: 'RESET_HIDDEN_DICE_USED' };
@@ -107,7 +108,6 @@ function gameReducer(state: GameState, action: Action): GameState {
         currentTurnPlayerId: action.payload.currentTurnPlayerId,
         players:             action.payload.players,
         roomCode:            action.payload.roomCode,
-        playResult:          null,
         hiddenDiceUsed: roundChanged
           ? { red: false, blue: false }
           : state.hiddenDiceUsed,
@@ -119,6 +119,9 @@ function gameReducer(state: GameState, action: Action): GameState {
 
     case 'PLAY_RESULT':
       return { ...state, playResult: action.payload };
+
+    case 'CLEAR_PLAY_RESULT':
+      return { ...state, playResult: null };
 
     case 'ROUND_RESULT':
       return { ...state, roundResult: action.payload };
@@ -173,7 +176,7 @@ interface GameContextValue {
   createRoom:        (playerName: string) => void;
   joinRoom:          (roomCode: string, playerName: string) => void;
   startGame:         () => void;
-  leaveRoom:         () => void;                // ← FIX AGREGADO
+  leaveRoom:         () => void;
   makePrediction:    (card: 'Zero' | 'Min' | 'More' | 'Max') => void;
   selectDice:        (whiteIndices: number[], useRed: boolean, useBlue: boolean) => void;
   clearError:        () => void;
@@ -181,6 +184,7 @@ interface GameContextValue {
   setPlayerShape:    (playerId: string, shape: Shape) => void;
   confirmShape:      () => void;
   clearRoundResult:  () => void;
+  clearPlayResult:   () => void;
 }
 
 const GameContext = createContext<GameContextValue | null>(null);
@@ -258,15 +262,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
     socketService.startGame();
   }, []);
 
-  // ── FIX: leaveRoom ───────────────────────────────────────────
-  // Avisa al servidor que el jugador abandonó la sala.
-  // El servidor elimina la sala si era el líder o si quedó vacía.
-  // El WebSocket sigue abierto para poder crear/unirse a otra sala.
   const leaveRoom = useCallback(() => {
-    socketService.leaveRoom();       // mensaje al servidor → sala eliminada
-    dispatch({ type: 'RESET' });     // limpia estado local, mantiene connected: true
+    socketService.leaveRoom();
+    dispatch({ type: 'RESET' });
   }, []);
-  // ────────────────────────────────────────────────────────────
 
   const makePrediction = useCallback((card: 'Zero' | 'Min' | 'More' | 'Max') => {
     socketService.makePrediction(card);
@@ -297,6 +296,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'CLEAR_ROUND_RESULT' });
   }, []);
 
+  const clearPlayResult = useCallback(() => {
+    dispatch({ type: 'CLEAR_PLAY_RESULT' });
+  }, []);
+
   return (
     <GameContext.Provider value={{
       state,
@@ -304,7 +307,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       createRoom,
       joinRoom,
       startGame,
-      leaveRoom,           // ← FIX AGREGADO
+      leaveRoom,
       makePrediction,
       selectDice,
       clearError,
@@ -312,6 +315,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       setPlayerShape,
       confirmShape,
       clearRoundResult,
+      clearPlayResult,
     }}>
       {children}
     </GameContext.Provider>
