@@ -91,6 +91,9 @@ function AppNavigator() {
             }}
             onVerReglas={() => navigation.navigate('Rules')}
             onSalir={() => navigation.navigate('Welcome')}
+             onChangeName={(nuevoNombre) => {                          // ← AGREGA ESTO
+             navigation.setParams({ playerName: nuevoNombre });
+      }}
           />
         )}
       </Stack.Screen>

@@ -17,8 +17,6 @@ import {
   Shape,
 } from '../types/GameTypes';
 
-// ── Estado global ─────────────────────────────────────────────
-
 interface HiddenDice {
   red: number;
   blue: number;
@@ -40,7 +38,7 @@ interface GameState {
   currentTurnPlayerId: string;
   players:             Player[];
   hiddenDice:          HiddenDice | null;
-  hiddenDiceUsed:      HiddenDiceUsed; // ← nuevo
+  hiddenDiceUsed:      HiddenDiceUsed;
   playResult:          PlayResultEntry[] | null;
   roundResult:         RoundScoreEntry[] | null;
   gameOver:            { finalScores: FinalScoreEntry[]; winnerName: string } | null;
@@ -60,7 +58,7 @@ const initialState: GameState = {
   currentTurnPlayerId: '',
   players:             [],
   hiddenDice:          null,
-  hiddenDiceUsed:      { red: false, blue: false }, // ← nuevo
+  hiddenDiceUsed:      { red: false, blue: false },
   playResult:          null,
   roundResult:         null,
   gameOver:            null,
@@ -68,8 +66,6 @@ const initialState: GameState = {
   playerShapes:        {},
   shapeSelected:       false,
 };
-
-// ── Acciones del reducer ──────────────────────────────────────
 
 type Action =
   | { type: 'SET_CONNECTED';           payload: boolean }
@@ -86,8 +82,8 @@ type Action =
   | { type: 'SET_PLAYER_SHAPE';        payload: { playerId: string; shape: Shape } }
   | { type: 'CLEAR_ROUND_RESULT' }
   | { type: 'SET_SHAPE_SELECTED' }
-  | { type: 'MARK_HIDDEN_DICE_USED';   payload: { useRed: boolean; useBlue: boolean } } // ← nuevo
-  | { type: 'RESET_HIDDEN_DICE_USED' };                                                  // ← nuevo
+  | { type: 'MARK_HIDDEN_DICE_USED';   payload: { useRed: boolean; useBlue: boolean } }
+  | { type: 'RESET_HIDDEN_DICE_USED' };
 
 function gameReducer(state: GameState, action: Action): GameState {
   switch (action.type) {
@@ -101,10 +97,8 @@ function gameReducer(state: GameState, action: Action): GameState {
       return { ...state, roomCode: action.payload.roomCode, playerId: action.payload.playerId, isLeader: false };
 
     case 'GAME_STATE': {
-      // Si cambió la ronda, los dados ocultos vuelven a estar disponibles
-      const newRound = action.payload.currentRound;
+      const newRound     = action.payload.currentRound;
       const roundChanged = newRound !== state.currentRound;
-
       return {
         ...state,
         phase:               action.payload.phase,
@@ -114,7 +108,6 @@ function gameReducer(state: GameState, action: Action): GameState {
         players:             action.payload.players,
         roomCode:            action.payload.roomCode,
         playResult:          null,
-        // roundResult NO se borra aquí (se borra al cerrar el modal)
         hiddenDiceUsed: roundChanged
           ? { red: false, blue: false }
           : state.hiddenDiceUsed,
@@ -174,14 +167,13 @@ function gameReducer(state: GameState, action: Action): GameState {
   }
 }
 
-// ── Context ───────────────────────────────────────────────────
-
 interface GameContextValue {
   state:             GameState;
   connect:           () => Promise<void>;
   createRoom:        (playerName: string) => void;
   joinRoom:          (roomCode: string, playerName: string) => void;
   startGame:         () => void;
+  leaveRoom:         () => void;                // ← FIX AGREGADO
   makePrediction:    (card: 'Zero' | 'Min' | 'More' | 'Max') => void;
   selectDice:        (whiteIndices: number[], useRed: boolean, useBlue: boolean) => void;
   clearError:        () => void;
@@ -193,8 +185,6 @@ interface GameContextValue {
 
 const GameContext = createContext<GameContextValue | null>(null);
 
-// ── Provider ──────────────────────────────────────────────────
-
 export function GameProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(gameReducer, initialState);
 
@@ -202,19 +192,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const unsubscribe = socketService.onMessage((message: ServerMessage) => {
       switch (message.type) {
         case 'room_created':
-          dispatch({
-            type: 'ROOM_CREATED',
-            payload: { roomCode: message.room_code, playerId: message.player_id },
-          });
+          dispatch({ type: 'ROOM_CREATED', payload: { roomCode: message.room_code, playerId: message.player_id } });
           break;
-
         case 'room_joined':
-          dispatch({
-            type: 'ROOM_JOINED',
-            payload: { roomCode: message.room_code, playerId: message.player_id },
-          });
+          dispatch({ type: 'ROOM_JOINED', payload: { roomCode: message.room_code, playerId: message.player_id } });
           break;
-
         case 'game_state':
           dispatch({
             type: 'GAME_STATE',
@@ -228,38 +210,23 @@ export function GameProvider({ children }: { children: ReactNode }) {
             },
           });
           break;
-
         case 'your_hidden_dice':
-          dispatch({
-            type: 'HIDDEN_DICE',
-            payload: { red: message.red, blue: message.blue },
-          });
+          dispatch({ type: 'HIDDEN_DICE', payload: { red: message.red, blue: message.blue } });
           break;
-
         case 'play_result':
           dispatch({ type: 'PLAY_RESULT', payload: message.results });
           break;
-
         case 'round_result':
           dispatch({ type: 'ROUND_RESULT', payload: message.scores });
           break;
-
         case 'game_over':
-          dispatch({
-            type: 'GAME_OVER',
-            payload: {
-              finalScores: message.final_scores,
-              winnerName:  message.winner_name,
-            },
-          });
+          dispatch({ type: 'GAME_OVER', payload: { finalScores: message.final_scores, winnerName: message.winner_name } });
           break;
-
         case 'error':
           dispatch({ type: 'SET_ERROR', payload: message.message });
           break;
       }
     });
-
     return unsubscribe;
   }, []);
 
@@ -267,10 +234,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     socketService.connect()
       .then(() => dispatch({ type: 'SET_CONNECTED', payload: true }))
       .catch(() => dispatch({ type: 'SET_CONNECTED', payload: false }));
-
-    return () => {
-      socketService.disconnect();
-    };
+    return () => { socketService.disconnect(); };
   }, []);
 
   const connect = useCallback(async () => {
@@ -294,14 +258,20 @@ export function GameProvider({ children }: { children: ReactNode }) {
     socketService.startGame();
   }, []);
 
+  // ── FIX: leaveRoom ───────────────────────────────────────────
+  // Avisa al servidor que el jugador abandonó la sala.
+  // El servidor elimina la sala si era el líder o si quedó vacía.
+  // El WebSocket sigue abierto para poder crear/unirse a otra sala.
+  const leaveRoom = useCallback(() => {
+    socketService.leaveRoom();       // mensaje al servidor → sala eliminada
+    dispatch({ type: 'RESET' });     // limpia estado local, mantiene connected: true
+  }, []);
+  // ────────────────────────────────────────────────────────────
+
   const makePrediction = useCallback((card: 'Zero' | 'Min' | 'More' | 'Max') => {
     socketService.makePrediction(card);
   }, []);
 
-  // selectDice ahora hace DOS cosas:
-  //   1. Manda la jugada al servidor.
-  //   2. Marca los dados ocultos como usados en el state local
-  //      (para que la UI los oculte en las siguientes jugadas de la ronda).
   const selectDice = useCallback((w: number[], r: boolean, b: boolean) => {
     socketService.selectDice(w, r, b);
     dispatch({ type: 'MARK_HIDDEN_DICE_USED', payload: { useRed: r, useBlue: b } });
@@ -334,6 +304,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       createRoom,
       joinRoom,
       startGame,
+      leaveRoom,           // ← FIX AGREGADO
       makePrediction,
       selectDice,
       clearError,
@@ -346,8 +317,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
     </GameContext.Provider>
   );
 }
-
-// ── Hook ──────────────────────────────────────────────────────
 
 export function useGame(): GameContextValue {
   const context = useContext(GameContext);
