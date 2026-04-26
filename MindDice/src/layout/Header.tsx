@@ -44,11 +44,11 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 40,
     paddingTop: 12,
     paddingBottom: 8,
   },
-  side:       { width: 52, alignItems: 'center', justifyContent: 'center' },
+  side:       { width: 80, alignItems: 'flex-start', justifyContent: 'center' },
   shield:     { height: 44, borderRadius: 22, borderWidth: 2, borderColor: COLORS.gold },
   shieldIcon: { fontSize: 18, color: COLORS.gold },
   center:     { flex: 1, alignItems: 'center' },

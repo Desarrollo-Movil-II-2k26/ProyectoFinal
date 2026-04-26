@@ -90,13 +90,10 @@ function gameReducer(state: GameState, action: Action): GameState {
   switch (action.type) {
     case 'SET_CONNECTED':
       return { ...state, connected: action.payload };
-
     case 'ROOM_CREATED':
       return { ...state, roomCode: action.payload.roomCode, playerId: action.payload.playerId, isLeader: true };
-
     case 'ROOM_JOINED':
       return { ...state, roomCode: action.payload.roomCode, playerId: action.payload.playerId, isLeader: false };
-
     case 'GAME_STATE': {
       const newRound     = action.payload.currentRound;
       const roundChanged = newRound !== state.currentRound;
@@ -108,63 +105,35 @@ function gameReducer(state: GameState, action: Action): GameState {
         currentTurnPlayerId: action.payload.currentTurnPlayerId,
         players:             action.payload.players,
         roomCode:            action.payload.roomCode,
-        hiddenDiceUsed: roundChanged
-          ? { red: false, blue: false }
-          : state.hiddenDiceUsed,
+        hiddenDiceUsed: roundChanged ? { red: false, blue: false } : state.hiddenDiceUsed,
       };
     }
-
     case 'HIDDEN_DICE':
       return { ...state, hiddenDice: action.payload };
-
     case 'PLAY_RESULT':
       return { ...state, playResult: action.payload };
-
     case 'CLEAR_PLAY_RESULT':
       return { ...state, playResult: null };
-
     case 'ROUND_RESULT':
       return { ...state, roundResult: action.payload };
-
     case 'CLEAR_ROUND_RESULT':
       return { ...state, roundResult: null };
-
     case 'GAME_OVER':
       return { ...state, gameOver: action.payload, phase: 'GameOver' };
-
     case 'SET_ERROR':
       return { ...state, error: action.payload };
-
     case 'CLEAR_ERROR':
       return { ...state, error: null };
-
     case 'RESET':
-      return { ...initialState, connected: state.connected };
-
+      return { ...initialState, connected: state.connected, shapeSelected: state.shapeSelected };
     case 'SET_PLAYER_SHAPE':
-      return {
-        ...state,
-        playerShapes: {
-          ...state.playerShapes,
-          [action.payload.playerId]: action.payload.shape,
-        },
-      };
-
+      return { ...state, playerShapes: { ...state.playerShapes, [action.payload.playerId]: action.payload.shape } };
     case 'SET_SHAPE_SELECTED':
       return { ...state, shapeSelected: true };
-
     case 'MARK_HIDDEN_DICE_USED':
-      return {
-        ...state,
-        hiddenDiceUsed: {
-          red:  state.hiddenDiceUsed.red  || action.payload.useRed,
-          blue: state.hiddenDiceUsed.blue || action.payload.useBlue,
-        },
-      };
-
+      return { ...state, hiddenDiceUsed: { red: state.hiddenDiceUsed.red || action.payload.useRed, blue: state.hiddenDiceUsed.blue || action.payload.useBlue } };
     case 'RESET_HIDDEN_DICE_USED':
       return { ...state, hiddenDiceUsed: { red: false, blue: false } };
-
     default:
       return state;
   }
@@ -202,22 +171,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
           dispatch({ type: 'ROOM_JOINED', payload: { roomCode: message.room_code, playerId: message.player_id } });
           break;
         case 'game_state':
-          dispatch({
-            type: 'GAME_STATE',
-            payload: {
-              phase:               message.phase,
-              currentRound:        message.current_round,
-              currentPlay:         message.current_play,
-              currentTurnPlayerId: message.current_turn_player_id,
-              players:             message.players,
-              roomCode:            message.room_code,
-            },
-          });
+          dispatch({ type: 'GAME_STATE', payload: { phase: message.phase, currentRound: message.current_round, currentPlay: message.current_play, currentTurnPlayerId: message.current_turn_player_id, players: message.players, roomCode: message.room_code } });
           break;
         case 'your_hidden_dice':
           dispatch({ type: 'HIDDEN_DICE', payload: { red: message.red, blue: message.blue } });
           break;
         case 'play_result':
+          console.log('[PLAY_RESULT recibido]', message.results); // 👈 para verificar
           dispatch({ type: 'PLAY_RESULT', payload: message.results });
           break;
         case 'round_result':
@@ -250,73 +210,21 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const createRoom = useCallback((playerName: string) => {
-    socketService.createRoom(playerName);
-  }, []);
-
-  const joinRoom = useCallback((roomCode: string, playerName: string) => {
-    socketService.joinRoom(roomCode, playerName);
-  }, []);
-
-  const startGame = useCallback(() => {
-    socketService.startGame();
-  }, []);
-
-  const leaveRoom = useCallback(() => {
-    socketService.leaveRoom();
-    dispatch({ type: 'RESET' });
-  }, []);
-
-  const makePrediction = useCallback((card: 'Zero' | 'Min' | 'More' | 'Max') => {
-    socketService.makePrediction(card);
-  }, []);
-
-  const selectDice = useCallback((w: number[], r: boolean, b: boolean) => {
-    socketService.selectDice(w, r, b);
-    dispatch({ type: 'MARK_HIDDEN_DICE_USED', payload: { useRed: r, useBlue: b } });
-  }, []);
-
-  const clearError = useCallback(() => {
-    dispatch({ type: 'CLEAR_ERROR' });
-  }, []);
-
-  const resetGame = useCallback(() => {
-    dispatch({ type: 'RESET' });
-  }, []);
-
-  const setPlayerShape = useCallback((playerId: string, shape: Shape) => {
-    dispatch({ type: 'SET_PLAYER_SHAPE', payload: { playerId, shape } });
-  }, []);
-
-  const confirmShape = useCallback(() => {
-    dispatch({ type: 'SET_SHAPE_SELECTED' });
-  }, []);
-
-  const clearRoundResult = useCallback(() => {
-    dispatch({ type: 'CLEAR_ROUND_RESULT' });
-  }, []);
-
-  const clearPlayResult = useCallback(() => {
-    dispatch({ type: 'CLEAR_PLAY_RESULT' });
-  }, []);
+  const createRoom    = useCallback((playerName: string) => { socketService.createRoom(playerName); }, []);
+  const joinRoom      = useCallback((roomCode: string, playerName: string) => { socketService.joinRoom(roomCode, playerName); }, []);
+  const startGame     = useCallback(() => { socketService.startGame(); }, []);
+  const leaveRoom     = useCallback(() => { socketService.leaveRoom(); dispatch({ type: 'RESET' }); }, []);
+  const makePrediction = useCallback((card: 'Zero' | 'Min' | 'More' | 'Max') => { socketService.makePrediction(card); }, []);
+  const selectDice    = useCallback((w: number[], r: boolean, b: boolean) => { socketService.selectDice(w, r, b); dispatch({ type: 'MARK_HIDDEN_DICE_USED', payload: { useRed: r, useBlue: b } }); }, []);
+  const clearError    = useCallback(() => { dispatch({ type: 'CLEAR_ERROR' }); }, []);
+  const resetGame     = useCallback(() => { dispatch({ type: 'RESET' }); }, []);
+  const setPlayerShape = useCallback((playerId: string, shape: Shape) => { dispatch({ type: 'SET_PLAYER_SHAPE', payload: { playerId, shape } }); }, []);
+  const confirmShape  = useCallback(() => { dispatch({ type: 'SET_SHAPE_SELECTED' }); }, []);
+  const clearRoundResult = useCallback(() => { dispatch({ type: 'CLEAR_ROUND_RESULT' }); }, []);
+  const clearPlayResult  = useCallback(() => { dispatch({ type: 'CLEAR_PLAY_RESULT' }); }, []);
 
   return (
-    <GameContext.Provider value={{
-      state,
-      connect,
-      createRoom,
-      joinRoom,
-      startGame,
-      leaveRoom,
-      makePrediction,
-      selectDice,
-      clearError,
-      resetGame,
-      setPlayerShape,
-      confirmShape,
-      clearRoundResult,
-      clearPlayResult,
-    }}>
+    <GameContext.Provider value={{ state, connect, createRoom, joinRoom, startGame, leaveRoom, makePrediction, selectDice, clearError, resetGame, setPlayerShape, confirmShape, clearRoundResult, clearPlayResult }}>
       {children}
     </GameContext.Provider>
   );

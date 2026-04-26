@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { GameProvider, useGame } from './src/store/GameContext';
@@ -30,6 +30,7 @@ const Stack = createNativeStackNavigator<RootStack>();
 function AppNavigator() {
   const { state, connect, createRoom, joinRoom, startGame, resetGame } = useGame();
   const navigation = useNavigation<any>();
+  const playerNameRef = useRef('');  // ← agrega esto
 
   useEffect(() => {
     if (
@@ -40,7 +41,7 @@ function AppNavigator() {
       state.phase === 'GameOver'
     ) {
       navigation.navigate('Game', {
-        playerName: '',
+        playerName: playerNameRef.current,  
         roomCode:   state.roomCode ?? '',
       });
     }
@@ -53,41 +54,32 @@ function AppNavigator() {
     >
       <Stack.Screen name="Welcome">
         {({ navigation }) => (
-          <WelcomeView
-            onEnter={(playerName) =>
-              navigation.navigate('Home', { playerName })
-            }
-          />
+          <WelcomeView onEnter={(playerName) => navigation.navigate('Home', { playerName })} />
         )}
       </Stack.Screen>
 
       <Stack.Screen name="Home">
-        {({ navigation, route }) => (
-          <HomeView
-            playerName={route.params.playerName}
-            onCrearSala={async () => {
-              await connect();
-              createRoom(route.params.playerName);
-              navigation.navigate('Lobby', {
-                playerName: route.params.playerName,
-                roomCode: state.roomCode ?? '',
-              });
-            }}
-            onUnirse={async (codigo) => {
-              await connect();
-              joinRoom(codigo, route.params.playerName);
-              navigation.navigate('Lobby', {
-                playerName: route.params.playerName,
-                roomCode: codigo,
-              });
-            }}
-            onVerReglas={() => navigation.navigate('Rules')}
-            onSalir={() => navigation.navigate('Welcome')}
-            onChangeName={(nuevoNombre) => {
-              navigation.setParams({ playerName: nuevoNombre });
-            }}
-          />
-        )}
+        {({ navigation, route }) => {
+          playerNameRef.current = route.params.playerName; // ← guarda el nombre
+          return (
+            <HomeView
+              playerName={route.params.playerName}
+              onCrearSala={async () => {
+                await connect();
+                createRoom(route.params.playerName);
+                navigation.navigate('Lobby', { playerName: route.params.playerName, roomCode: state.roomCode ?? '' });
+              }}
+              onUnirse={async (codigo) => {
+                await connect();
+                joinRoom(codigo, route.params.playerName);
+                navigation.navigate('Lobby', { playerName: route.params.playerName, roomCode: codigo });
+              }}
+              onVerReglas={() => navigation.navigate('Rules')}
+              onSalir={() => navigation.navigate('Welcome')}
+              onChangeName={(nuevoNombre) => { navigation.setParams({ playerName: nuevoNombre }); }}
+            />
+          );
+        }}
       </Stack.Screen>
 
       <Stack.Screen name="Lobby">
@@ -98,20 +90,14 @@ function AppNavigator() {
             isLeader={state.isLeader}
             onIniciar={() => {
               startGame();
-              navigation.navigate('Game', {
-                playerName: route.params.playerName,
-                roomCode:   state.roomCode ?? route.params.roomCode,
-              });
+              navigation.navigate('Game', { playerName: route.params.playerName, roomCode: state.roomCode ?? route.params.roomCode });
             }}
             onSalir={() => {
               socketService.leaveRoom();
               resetGame();
               navigation.navigate('Home', { playerName: route.params.playerName });
             }}
-            onVerJuego={() => navigation.navigate('Game', {
-              playerName: route.params.playerName,
-              roomCode:   state.roomCode ?? route.params.roomCode,
-            })}
+            onVerJuego={() => navigation.navigate('Game', { playerName: route.params.playerName, roomCode: state.roomCode ?? route.params.roomCode })}
           />
         )}
       </Stack.Screen>
@@ -120,9 +106,7 @@ function AppNavigator() {
         {({ navigation, route }) => (
           <GameView
             onGoToDiceSelection={() => navigation.navigate('DiceSelection')}
-            onSalir={() =>
-              navigation.navigate('Home', { playerName: route.params.playerName })
-            }
+            onSalir={() => navigation.navigate('Home', { playerName: route.params.playerName })}
           />
         )}
       </Stack.Screen>
@@ -131,7 +115,6 @@ function AppNavigator() {
         {({ navigation }) => {
           const { state, selectDice } = useGame();
           const myPlayer = state.players.find(p => p.id === state.playerId);
-
           return (
             <DiceSelectionView
               whiteDice={myPlayer?.white_dice ?? []}
@@ -139,15 +122,9 @@ function AppNavigator() {
               hiddenDiceUsed={state.hiddenDiceUsed}
               onConfirm={(msg: SelectDiceMessage) => {
                 selectDice(msg.white_indices, msg.use_red, msg.use_blue);
-                navigation.navigate('Game', {
-                  playerName: '',
-                  roomCode: state.roomCode ?? '',
-                });
+                navigation.navigate('Game', { playerName: '', roomCode: state.roomCode ?? '' });
               }}
-              onSalir={() => navigation.navigate('Game', {
-                playerName: '',
-                roomCode: state.roomCode ?? '',
-              })}
+              onSalir={() => navigation.navigate('Game', { playerName: '', roomCode: state.roomCode ?? '' })}
             />
           );
         }}
@@ -170,14 +147,8 @@ function AppNavigator() {
             scores={state.roundResult ?? []}
             onContinuar={() =>
               state.phase === 'GameOver'
-                ? navigation.navigate('FinalScore', {
-                    winnerName:  state.gameOver?.winnerName ?? '',
-                    finalScores: state.gameOver?.finalScores ?? [],
-                  })
-                : navigation.navigate('Game', {
-                    playerName: '',
-                    roomCode:   state.roomCode ?? '',
-                  })
+                ? navigation.navigate('FinalScore', { winnerName: state.gameOver?.winnerName ?? '', finalScores: state.gameOver?.finalScores ?? [] })
+                : navigation.navigate('Game', { playerName: '', roomCode: state.roomCode ?? '' })
             }
           />
         )}

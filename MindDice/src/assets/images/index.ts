@@ -13,4 +13,6 @@ export const Images = {
   bg_createroom: require('./bg_createroom.png'),
   bg_navigationhome: require('./bg_navigationhome.png'),
   bg_game: require('./bg_game.png'),
+  bg_codeaccess: require('./bg_codeaccess.png'),
+  bg_players: require('./bg_players.png'),
 };

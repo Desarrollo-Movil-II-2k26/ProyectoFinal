@@ -4,7 +4,6 @@ import MedievalBackground from '../layout/MedievalBackground';
 import Header from '../layout/Header';
 import DiceSelector from '../game/DiceSelector';
 import { G } from '../styles/GlobalStyles';
-import { ClientMessage } from '../types/GameTypes';  // 👈 cambia MsgSelectDice por ClientMessage
 import { SelectDiceMessage } from '../types/GameTypes';
 
 interface Props {
@@ -24,7 +23,7 @@ export default function DiceSelectionView({ whiteDice, hiddenDice, hiddenDiceUse
           <DiceSelector
             whiteDice={whiteDice}
             hiddenDice={hiddenDice}
-            hiddenDiceUsed={hiddenDiceUsed}  // 👈 agrega esto
+            hiddenDiceUsed={hiddenDiceUsed}
             onConfirm={onConfirm}
           />
         </ScrollView>

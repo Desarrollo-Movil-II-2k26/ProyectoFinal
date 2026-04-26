@@ -1,24 +1,49 @@
 import React from 'react';
-import { Text, StyleSheet } from 'react-native';
-import Card from '../components/common/Card';
+import { View, Text, StyleSheet, ImageBackground, Dimensions } from 'react-native';
+import { Images } from '../assets/images';
 import { COLORS, FONTS } from '../styles/Theme';
 
+const SCREEN_W = Dimensions.get('window').width;
+const IMG_H     = SCREEN_W * (325 / 767); // ratio exacto de la imagen
+
 export default function RoomCode({ code }: { code: string }) {
+  const letters = (code ?? '----').padEnd(4, '-').split('');
+
   return (
-    <Card style={styles.card}>
-      <Text style={styles.label}>CÓDIGO DE SALA</Text>
-      <Text style={styles.code}>{code}</Text>
-      <Text style={styles.hint}>Comparte este código con tus amigos</Text>
-    </Card>
+    <ImageBackground
+      source={Images.bg_codeaccess}
+      style={[styles.bg, { height: IMG_H }]}
+      resizeMode="stretch"
+    >
+      <View style={styles.lettersRow}>
+        {letters.slice(0, 4).map((char, i) => (
+          <Text key={i} style={styles.letter}>{char}</Text>
+        ))}
+      </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  card:  { alignItems: 'center' },
-  label: { color: COLORS.gold_muted, fontSize: FONTS.sizes.xs, letterSpacing: 2, marginBottom: 8 },
-  code: {
-    fontSize: 42, color: COLORS.gold, fontWeight: '700', letterSpacing: 14,
-    textShadowColor: '#000', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 6,
+  bg: {
+    width:          '100%',
+    justifyContent: 'flex-start',  // empuja las letras hacia abajo
+    alignItems:     'center',
+    paddingTop:  IMG_H * 0.37, // 20% desde abajo = dentro de los cuadritos
   },
-  hint:  { color: COLORS.text_muted, fontSize: FONTS.sizes.xs, marginTop: 6 },
+  lettersRow: {
+    flexDirection:  'row',
+    justifyContent: 'center',
+    gap:            SCREEN_W * 0.01, // gap proporcional al ancho
+  },
+  letter: {
+    width:          SCREEN_W * 0.13,  // ancho proporcional al cuadrito
+    color:          COLORS.gold,
+    fontSize:       FONTS.sizes.xxl,
+    fontWeight:     '700',
+    textAlign:      'center',
+    textShadowColor:  '#000',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 4,
+  },
 });

@@ -42,13 +42,13 @@ export default function GameView({ onGoToDiceSelection, onSalir }: Props) {
 
   // ── Auto-cierre del modal de jugada a los 3.5 segundos ──
   useEffect(() => {
-    if (phase === 'ShowingPlayResults' && playResult) {
+    if (playResult) {
       const timer = setTimeout(() => {
         clearPlayResult();
       }, 3500);
       return () => clearTimeout(timer);
     }
-  }, [phase, playResult]);
+  }, [playResult]);
 
   return (
     <MedievalBackground variant="game">
@@ -157,7 +157,7 @@ export default function GameView({ onGoToDiceSelection, onSalir }: Props) {
 
       {/* Modal resultados de jugada — se cierra solo a los 3.5s */}
       <Modal
-        visible={phase === 'ShowingPlayResults' && !!playResult}
+        visible={!!playResult}
         transparent
         animationType="fade"
       >
@@ -253,7 +253,7 @@ export default function GameView({ onGoToDiceSelection, onSalir }: Props) {
 const styles = StyleSheet.create({
   cornerTR: {
     position: 'absolute',
-    top:      8,
+    top:      20,
     right:    8,
     zIndex:   100,
   },
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
     fontWeight:    '700',
     letterSpacing: 2,
     textAlign:     'center',
-    paddingTop:    12,
+    paddingTop:    45,
     paddingBottom: 4,
   },
   scroll: { paddingBottom: 24, gap: 12 },
