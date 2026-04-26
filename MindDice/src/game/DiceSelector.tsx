@@ -10,10 +10,17 @@ import { ClientMessage } from '../types/GameTypes';
 interface Props {
   whiteDice:  number[];
   hiddenDice: { red: number; blue: number } | null;
-    onConfirm:  (msg: ClientMessage) => void;
-  }
+  /** Dados ocultos ya consumidos en la ronda actual */
+  hiddenDiceUsed?: { red: boolean; blue: boolean };
+  onConfirm:  (msg: ClientMessage) => void;
+}
 
-export default function DiceSelector({ whiteDice, hiddenDice, onConfirm }: Props) {
+export default function DiceSelector({
+  whiteDice,
+  hiddenDice,
+  hiddenDiceUsed = { red: false, blue: false },
+  onConfirm,
+}: Props) {
   const [whiteSelected, setWhiteSelected] = useState<number[]>([]);
   const [useRed,        setUseRed]        = useState(false);
   const [useBlue,       setUseBlue]       = useState(false);
@@ -30,10 +37,12 @@ export default function DiceSelector({ whiteDice, hiddenDice, onConfirm }: Props
   };
 
   const toggleRed = () => {
+    if (hiddenDiceUsed.red) return;          // ya se usó en esta ronda
     if (useRed || totalSelected < 3) setUseRed(p => !p);
   };
 
   const toggleBlue = () => {
+    if (hiddenDiceUsed.blue) return;         // ya se usó en esta ronda
     if (useBlue || totalSelected < 3) setUseBlue(p => !p);
   };
 
@@ -73,6 +82,8 @@ export default function DiceSelector({ whiteDice, hiddenDice, onConfirm }: Props
             useBlue={useBlue}
             onToggleRed={toggleRed}
             onToggleBlue={toggleBlue}
+            disabledRed={hiddenDiceUsed.red}
+            disabledBlue={hiddenDiceUsed.blue}
           />
         </Card>
       )}

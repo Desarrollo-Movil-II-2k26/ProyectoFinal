@@ -34,6 +34,7 @@ interface GameState {
   currentPlay:         number;
   currentTurnPlayerId: string;
   players:             Player[];
+  hiddenDiceUsed: { red: boolean; blue: boolean }; //Dado rojo y azul
   hiddenDice:          HiddenDice | null;
   playResult:          PlayResultEntry[] | null;
   roundResult:         RoundScoreEntry[] | null;
@@ -59,6 +60,7 @@ const initialState: GameState = {
   gameOver:            null,
   error:               null,
   playerShapes:        {},
+  hiddenDiceUsed: { red: false, blue: false }, //Dado rojo y azul
   shapeSelected:       false, // ← inicia en false, modal aparece
 };
 
@@ -78,7 +80,10 @@ type Action =
   | { type: 'RESET' }
   | { type: 'SET_PLAYER_SHAPE';     payload: { playerId: string; shape: Shape } }
   | { type: 'CLEAR_ROUND_RESULT' }
+  | { type: 'MARK_HIDDEN_DICE_USED'; payload: { useRed: boolean; useBlue: boolean } } //Dado rojo y azul
+  | { type: 'RESET_HIDDEN_DICE_USED' } //Dado rojo y azul
   | { type: 'SET_SHAPE_SELECTED' };
+  
 
 function gameReducer(state: GameState, action: Action): GameState {
   switch (action.type) {
@@ -91,26 +96,43 @@ function gameReducer(state: GameState, action: Action): GameState {
     case 'ROOM_JOINED':
       return { ...state, roomCode: action.payload.roomCode, playerId: action.payload.playerId, isLeader: false };
 
-    case 'GAME_STATE':
-      // Importante: NO se borra roundResult aquí.
-      // Se mantiene hasta que el usuario cierre el modal de resumen
-      // (acción CLEAR_ROUND_RESULT).
+    case 'GAME_STATE': {
+      const newRound = action.payload.currentRound;
+      const roundChanged = newRound !== state.currentRound;
+
       return {
         ...state,
         phase:               action.payload.phase,
-        currentRound:        action.payload.currentRound,
+        currentRound:        newRound,
         currentPlay:         action.payload.currentPlay,
         currentTurnPlayerId: action.payload.currentTurnPlayerId,
         players:             action.payload.players,
         roomCode:            action.payload.roomCode,
         playResult:          null,
+        // si cambió la ronda, los dados ocultos vuelven a estar disponibles
+        hiddenDiceUsed: roundChanged
+          ? { red: false, blue: false }
+          : state.hiddenDiceUsed,
       };
+    }
 
     case 'HIDDEN_DICE':
       return { ...state, hiddenDice: action.payload };
 
     case 'PLAY_RESULT':
       return { ...state, playResult: action.payload };
+
+    case 'MARK_HIDDEN_DICE_USED':
+  return {
+    ...state,
+    hiddenDiceUsed: {
+      red:  state.hiddenDiceUsed.red  || action.payload.useRed,
+      blue: state.hiddenDiceUsed.blue || action.payload.useBlue,
+    },
+  };
+
+    case 'RESET_HIDDEN_DICE_USED':
+      return { ...state, hiddenDiceUsed: { red: false, blue: false } };
 
     case 'ROUND_RESULT':
       return { ...state, roundResult: action.payload };
@@ -271,9 +293,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
     socketService.makePrediction(card);
   }, []);
 
-  const selectDice = useCallback((w: number[], r: boolean, b: boolean) => {
-    socketService.selectDice(w, r, b);
-  }, []);
+const selectDice = useCallback((w: number[], r: boolean, b: boolean) => {
+  socketService.selectDice(w, r, b);
+  dispatch({ type: 'MARK_HIDDEN_DICE_USED', payload: { useRed: r, useBlue: b } });
+}, []);
 
   const clearError = useCallback(() => {
     dispatch({ type: 'CLEAR_ERROR' });

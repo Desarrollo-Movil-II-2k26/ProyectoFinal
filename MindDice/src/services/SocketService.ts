@@ -6,7 +6,7 @@ class SocketService {
   private socket: WebSocket | null = null;
   private messageHandlers: MessageHandler[] = [];
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-  private url: string = 'ws://18.188.11.101:5000';
+  private url: string = 'ws://3.144.149.200:5000';
   private shouldReconnect: boolean = false;
 
   connect(): Promise<void> {

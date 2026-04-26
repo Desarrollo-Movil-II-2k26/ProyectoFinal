@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { GameProvider, useGame } from './src/store/GameContext';
+import { socketService } from './src/services/SocketService'; // ← FIX 1: import agregado
 
 import WelcomeView       from './src/views/WelcomeView';
 import HomeView          from './src/views/HomeView';
@@ -23,17 +24,23 @@ export type RootStack = {
   Rules:         undefined;
 };
 
-
-
 const Stack = createNativeStackNavigator<RootStack>();
 
-// Componente separado para poder usar useGame() y useNavigation() juntos
 function AppNavigator() {
-  const { state, connect, createRoom, joinRoom, startGame } = useGame();
+  const { state, connect, createRoom, joinRoom, startGame, resetGame } = useGame(); // ← FIX 2: resetGame agregado
   const navigation = useNavigation<any>();
 
-  // Navegación automática basada en la fase del juego
   useEffect(() => {
+    if (
+      state.phase === 'MakingPredictions' ||
+      state.phase === 'SelectingDice'
+    ) {
+      navigation.navigate('Game', {
+        playerName: '',
+        roomCode:   state.roomCode ?? '',
+      });
+    }
+
     if (state.phase === 'ShowingRoundResults' && state.roundResult) {
       navigation.navigate('RoundResult', { round: state.currentRound });
     }
@@ -64,9 +71,7 @@ function AppNavigator() {
         {({ navigation, route }) => (
           <HomeView
             playerName={route.params.playerName}
-
             onCrearSala={async () => {
-              //Para conectar con el servidor
               await connect();
               createRoom(route.params.playerName);
               navigation.navigate('Lobby', {
@@ -74,9 +79,7 @@ function AppNavigator() {
                 roomCode: state.roomCode ?? '',
               });
             }}
-            
             onUnirse={async (codigo) => {
-              //Para conectar con el servidor
               await connect();
               joinRoom(codigo, route.params.playerName);
               navigation.navigate('Lobby', {
@@ -97,19 +100,21 @@ function AppNavigator() {
             players={state.players}
             isLeader={state.isLeader}
             onIniciar={() => {
-              startGame();  
+              startGame();
               navigation.navigate('Game', {
                 playerName: route.params.playerName,
                 roomCode:   state.roomCode ?? route.params.roomCode,
               });
             }}
-            onSalir={() =>
-              navigation.navigate('Home', { playerName: route.params.playerName })
-            }
-            onVerJuego={() => navigation.navigate('Game', {   // ← AGREGA ESTO
-            playerName: route.params.playerName,
-            roomCode:   state.roomCode ?? route.params.roomCode,
-      })}
+            onSalir={() => {
+              socketService.disconnect(); // ← FIX 3: cierra WebSocket → servidor elimina sala
+              resetGame();               // ← FIX 3: limpia estado local
+              navigation.navigate('Home', { playerName: route.params.playerName });
+            }}
+            onVerJuego={() => navigation.navigate('Game', {
+              playerName: route.params.playerName,
+              roomCode:   state.roomCode ?? route.params.roomCode,
+            })}
           />
         )}
       </Stack.Screen>
@@ -125,7 +130,7 @@ function AppNavigator() {
         )}
       </Stack.Screen>
 
-      <Stack.Screen name="DiceSelection"> 
+      <Stack.Screen name="DiceSelection">
         {({ navigation }) => {
           const { state, selectDice } = useGame();
           const myPlayer = state.players.find(p => p.id === state.playerId);
