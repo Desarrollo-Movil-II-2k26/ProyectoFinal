@@ -31,9 +31,9 @@ export default function LobbyView({ roomCode, players, isLeader, onIniciar, onSa
         </Card>
         <StartGameButton isLeader={isLeader} playerCount={players.length} onIniciar={onIniciar} />
 
-        <TouchableOpacity style={styles.verBtn} onPress={onVerJuego} activeOpacity={0.8}>
+        {/*<TouchableOpacity style={styles.verBtn} onPress={onVerJuego} activeOpacity={0.8}>
           <Text style={styles.verBtnText}>VER JUEGO →</Text>
-        </TouchableOpacity>
+        </TouchableOpacity>*/}
 
       </SafeAreaView>
     </MedievalBackground>

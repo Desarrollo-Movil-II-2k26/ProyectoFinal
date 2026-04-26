@@ -28,6 +28,10 @@ export default function DiceSelector({
   const totalSelected = whiteSelected.length + (useRed ? 1 : 0) + (useBlue ? 1 : 0);
   const canConfirm    = totalSelected === 3;
 
+  // Si los dos dados ocultos ya se usaron, no mostramos la card de hidden
+  const showHiddenCard =
+    !!hiddenDice && !(hiddenDiceUsed.red && hiddenDiceUsed.blue);
+
   const toggleWhite = (i: number) => {
     if (whiteSelected.includes(i)) {
       setWhiteSelected(prev => prev.filter(x => x !== i));
@@ -73,7 +77,7 @@ export default function DiceSelector({
         />
       </Card>
 
-      {hiddenDice && (
+      {showHiddenCard && hiddenDice && (
         <Card>
           <HiddenDice
             red={hiddenDice.red}
@@ -82,8 +86,8 @@ export default function DiceSelector({
             useBlue={useBlue}
             onToggleRed={toggleRed}
             onToggleBlue={toggleBlue}
-            disabledRed={hiddenDiceUsed.red}
-            disabledBlue={hiddenDiceUsed.blue}
+            hideRed={hiddenDiceUsed.red}
+            hideBlue={hiddenDiceUsed.blue}
           />
         </Card>
       )}

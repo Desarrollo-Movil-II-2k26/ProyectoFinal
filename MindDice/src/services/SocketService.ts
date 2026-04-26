@@ -72,6 +72,7 @@ class SocketService {
   createRoom(playerName: string)  { this.send({ type: 'create_room', player_name: playerName }); }
   joinRoom(roomCode: string, playerName: string) { this.send({ type: 'join_room', room_code: roomCode, player_name: playerName }); }
   startGame() { this.send({ type: 'start_game' }); }
+  leaveRoom(): void {this.send({ type: 'leave_room' });}
   makePrediction(card: 'Zero' | 'Min' | 'More' | 'Max') { this.send({ type: 'make_prediction', card }); }
   selectDice(whiteIndices: number[], useRed: boolean, useBlue: boolean) {
     this.send({ type: 'select_dice', white_indices: whiteIndices, use_red: useRed, use_blue: useBlue });

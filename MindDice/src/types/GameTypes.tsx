@@ -51,6 +51,7 @@ export type ClientMessage =
   | { type: 'create_room'; player_name: string }
   | { type: 'join_room'; room_code: string; player_name: string }
   | { type: 'start_game' }
+  |  { type: 'leave_room' }
   | { type: 'make_prediction'; card: PredictionCard }
   | { type: 'select_dice'; white_indices: number[]; use_red: boolean; use_blue: boolean };
 

@@ -18,13 +18,13 @@ interface Props {
 
 export default function GameView({ onGoToDiceSelection, onSalir }: Props) {
   const { state, makePrediction, setPlayerShape, confirmShape, clearRoundResult } = useGame();
-  const {
-    phase, currentRound, currentPlay,
-    currentTurnPlayerId, players, playerId,
-    playResult, roundResult, gameOver,
-    hiddenDice, playerShapes,
-    shapeSelected,
-  } = state;
+const {
+  phase, currentRound, currentPlay,
+  currentTurnPlayerId, players, playerId,
+  playResult, roundResult, gameOver,
+  hiddenDice, hiddenDiceUsed,
+  playerShapes, shapeSelected,
+} = state;
 
   const myPlayer = players.find(p => p.id === playerId) ?? players[0];
   const isMyTurn = currentTurnPlayerId === playerId;
@@ -33,7 +33,6 @@ export default function GameView({ onGoToDiceSelection, onSalir }: Props) {
     makePrediction(card);
   };
 
-  // Calcula dados usados por jugador del playResult
   const usedDiceIndices: Record<string, number[]> = {};
   if (playResult) {
     playResult.forEach(r => {
@@ -63,6 +62,7 @@ export default function GameView({ onGoToDiceSelection, onSalir }: Props) {
             playerShapes={playerShapes}
             myPlayerId={playerId ?? ''}
             hiddenDice={hiddenDice}
+            hiddenDiceUsed={hiddenDiceUsed} //Dado desaparecen rojo y azul
             currentTurnPlayerId={currentTurnPlayerId}
             usedDiceIndices={usedDiceIndices}
           />
@@ -82,11 +82,13 @@ export default function GameView({ onGoToDiceSelection, onSalir }: Props) {
               <Text style={styles.turnSub}>
                 Te quedan {myPlayer?.white_dice.length ?? 0} dados blancos
               </Text>
-              {hiddenDice && (
-                <Text style={styles.hiddenInfo}>
-                  Dados ocultos: 🔴 {hiddenDice.red} 🔵 {hiddenDice.blue}
-                </Text>
-              )}
+                {hiddenDice && !(hiddenDiceUsed.red && hiddenDiceUsed.blue) && (
+                  <Text style={styles.hiddenInfo}>
+                    Dados ocultos:{' '}
+                    {!hiddenDiceUsed.red  && <>🔴 {hiddenDice.red} </>}
+                    {!hiddenDiceUsed.blue && <>🔵 {hiddenDice.blue}</>}
+                  </Text>
+                )}
               <Text style={styles.turnAction} onPress={onGoToDiceSelection}>
                 SELECCIONAR DADOS →
               </Text>
@@ -97,24 +99,6 @@ export default function GameView({ onGoToDiceSelection, onSalir }: Props) {
           {phase === 'SelectingDice' && !isMyTurn && (
             <View style={styles.waitCard}>
               <Text style={styles.waitText}>ESPERANDO JUGADA...</Text>
-            </View>
-          )}
-
-          {/* Resultados de UNA jugada (3 veces por ronda) */}
-          {phase === 'ShowingPlayResults' && playResult && (
-            <View style={styles.resultsCard}>
-              <Text style={styles.resultsTitle}>
-                RESULTADO JUGADA {currentPlay - 1}
-              </Text>
-              {playResult.map((r) => (
-                <CombinationDisplay
-                  key={r.player_id}
-                  playerName={r.player_name}
-                  diceUsed={r.dice_used}
-                  comboType={r.combo_type}
-                  pointsEarned={r.points_earned}
-                />
-              ))}
             </View>
           )}
 
@@ -158,7 +142,41 @@ export default function GameView({ onGoToDiceSelection, onSalir }: Props) {
         }}
       />
 
-      {/* Modal RESUMEN DE RONDA — aparece cuando llega round_result, se cierra al continuar */}
+      {/* Modal resultados de jugada */}
+      <Modal
+        visible={phase === 'ShowingPlayResults' && !!playResult}
+        transparent
+        animationType="fade"
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.playResultCard}>
+
+            <View style={[styles.corner, styles.cornerTL]} />
+            <View style={[styles.corner, styles.cornerTRc]} />
+            <View style={[styles.corner, styles.cornerBL]} />
+            <View style={[styles.corner, styles.cornerBR]} />
+
+            <Text style={styles.playResultTitle}>
+              ✦  JUGADA {currentPlay - 1}  ✦
+            </Text>
+
+            <View style={styles.playResultDivider} />
+
+            {playResult?.map((r) => (
+              <CombinationDisplay
+                key={r.player_id}
+                playerName={r.player_name}
+                diceUsed={r.dice_used}
+                comboType={r.combo_type}
+                pointsEarned={r.points_earned}
+              />
+            ))}
+
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal RESUMEN DE RONDA */}
       <Modal
         visible={!!roundResult}
         transparent
@@ -250,13 +268,47 @@ const styles = StyleSheet.create({
   turnAction: { marginTop: 12, color: COLORS.gold, fontWeight: '700' },
   waitCard:   { margin: 16, padding: 20, alignItems: 'center' },
   waitText:   { color: COLORS.text_muted },
-  resultsCard: {
-    margin:      16,
-    borderWidth: 1,
-    borderColor: COLORS.gold,
-    padding:     12,
+
+  // ── Modal resultados de jugada ───────────────────────────
+  playResultCard: {
+    marginHorizontal:  24,
+    backgroundColor:   'rgba(14,10,4,0.97)',
+    borderWidth:       2,
+    borderColor:       COLORS.gold,
+    borderRadius:      6,
+    paddingVertical:   24,
+    paddingHorizontal: 16,
+    gap:               8,
+    shadowColor:       COLORS.gold,
+    shadowOpacity:     0.4,
+    shadowRadius:      20,
+    shadowOffset:      { width: 0, height: 0 },
+    elevation:         20,
   },
-  resultsTitle: { color: COLORS.gold, textAlign: 'center' },
+  playResultTitle: {
+    color:         COLORS.gold,
+    fontSize:      FONTS.sizes.lg,
+    fontWeight:    '700',
+    letterSpacing: 4,
+    textAlign:     'center',
+  },
+  playResultDivider: {
+    height:           1,
+    backgroundColor:  'rgba(201,152,58,0.3)',
+    marginHorizontal: 16,
+    marginBottom:     8,
+  },
+  corner: {
+    position:    'absolute',
+    width:       16,
+    height:      16,
+    borderColor: COLORS.gold,
+    borderWidth: 2,
+  },
+  cornerTL:  { top: 6, left: 6,   borderRightWidth: 0, borderBottomWidth: 0, borderTopLeftRadius: 3 },
+  cornerTRc: { top: 6, right: 6,  borderLeftWidth: 0,  borderBottomWidth: 0, borderTopRightRadius: 3 },
+  cornerBL:  { bottom: 6, left: 6,  borderRightWidth: 0, borderTopWidth: 0, borderBottomLeftRadius: 3 },
+  cornerBR:  { bottom: 6, right: 6, borderLeftWidth: 0,  borderTopWidth: 0, borderBottomRightRadius: 3 },
 
   // ── Modal resumen de ronda ───────────────────────────────
   modalBackdrop: {
@@ -362,9 +414,9 @@ const styles = StyleSheet.create({
   },
   podium: { width: '100%', gap: 6, marginTop: 8 },
   podiumRow: {
-    flexDirection:  'row',
-    justifyContent: 'space-between',
-    alignItems:     'center',
+    flexDirection:     'row',
+    justifyContent:    'space-between',
+    alignItems:        'center',
     paddingVertical:   8,
     paddingHorizontal: 12,
     borderWidth:       1,

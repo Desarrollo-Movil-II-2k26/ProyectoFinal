@@ -24,6 +24,11 @@ interface HiddenDice {
   blue: number;
 }
 
+interface HiddenDiceUsed {
+  red:  boolean;
+  blue: boolean;
+}
+
 interface GameState {
   connected:           boolean;
   playerId:            string | null;
@@ -34,14 +39,14 @@ interface GameState {
   currentPlay:         number;
   currentTurnPlayerId: string;
   players:             Player[];
-  hiddenDiceUsed: { red: boolean; blue: boolean }; //Dado rojo y azul
   hiddenDice:          HiddenDice | null;
+  hiddenDiceUsed:      HiddenDiceUsed; // ← nuevo
   playResult:          PlayResultEntry[] | null;
   roundResult:         RoundScoreEntry[] | null;
   gameOver:            { finalScores: FinalScoreEntry[]; winnerName: string } | null;
   error:               string | null;
   playerShapes:        Record<string, Shape>;
-  shapeSelected:       boolean; // ← controla si ya eligió figura
+  shapeSelected:       boolean;
 }
 
 const initialState: GameState = {
@@ -55,35 +60,34 @@ const initialState: GameState = {
   currentTurnPlayerId: '',
   players:             [],
   hiddenDice:          null,
+  hiddenDiceUsed:      { red: false, blue: false }, // ← nuevo
   playResult:          null,
   roundResult:         null,
   gameOver:            null,
   error:               null,
   playerShapes:        {},
-  hiddenDiceUsed: { red: false, blue: false }, //Dado rojo y azul
-  shapeSelected:       false, // ← inicia en false, modal aparece
+  shapeSelected:       false,
 };
 
 // ── Acciones del reducer ──────────────────────────────────────
 
 type Action =
-  | { type: 'SET_CONNECTED';        payload: boolean }
-  | { type: 'ROOM_CREATED';         payload: { roomCode: string; playerId: string } }
-  | { type: 'ROOM_JOINED';          payload: { roomCode: string; playerId: string } }
-  | { type: 'GAME_STATE';           payload: { phase: GamePhase; currentRound: number; currentPlay: number; currentTurnPlayerId: string; players: Player[]; roomCode: string } }
-  | { type: 'HIDDEN_DICE';          payload: HiddenDice }
-  | { type: 'PLAY_RESULT';          payload: PlayResultEntry[] }
-  | { type: 'ROUND_RESULT';         payload: RoundScoreEntry[] }
-  | { type: 'GAME_OVER';            payload: { finalScores: FinalScoreEntry[]; winnerName: string } }
-  | { type: 'SET_ERROR';            payload: string }
+  | { type: 'SET_CONNECTED';           payload: boolean }
+  | { type: 'ROOM_CREATED';            payload: { roomCode: string; playerId: string } }
+  | { type: 'ROOM_JOINED';             payload: { roomCode: string; playerId: string } }
+  | { type: 'GAME_STATE';              payload: { phase: GamePhase; currentRound: number; currentPlay: number; currentTurnPlayerId: string; players: Player[]; roomCode: string } }
+  | { type: 'HIDDEN_DICE';             payload: HiddenDice }
+  | { type: 'PLAY_RESULT';             payload: PlayResultEntry[] }
+  | { type: 'ROUND_RESULT';            payload: RoundScoreEntry[] }
+  | { type: 'GAME_OVER';               payload: { finalScores: FinalScoreEntry[]; winnerName: string } }
+  | { type: 'SET_ERROR';               payload: string }
   | { type: 'CLEAR_ERROR' }
   | { type: 'RESET' }
-  | { type: 'SET_PLAYER_SHAPE';     payload: { playerId: string; shape: Shape } }
+  | { type: 'SET_PLAYER_SHAPE';        payload: { playerId: string; shape: Shape } }
   | { type: 'CLEAR_ROUND_RESULT' }
-  | { type: 'MARK_HIDDEN_DICE_USED'; payload: { useRed: boolean; useBlue: boolean } } //Dado rojo y azul
-  | { type: 'RESET_HIDDEN_DICE_USED' } //Dado rojo y azul
-  | { type: 'SET_SHAPE_SELECTED' };
-  
+  | { type: 'SET_SHAPE_SELECTED' }
+  | { type: 'MARK_HIDDEN_DICE_USED';   payload: { useRed: boolean; useBlue: boolean } } // ← nuevo
+  | { type: 'RESET_HIDDEN_DICE_USED' };                                                  // ← nuevo
 
 function gameReducer(state: GameState, action: Action): GameState {
   switch (action.type) {
@@ -97,6 +101,7 @@ function gameReducer(state: GameState, action: Action): GameState {
       return { ...state, roomCode: action.payload.roomCode, playerId: action.payload.playerId, isLeader: false };
 
     case 'GAME_STATE': {
+      // Si cambió la ronda, los dados ocultos vuelven a estar disponibles
       const newRound = action.payload.currentRound;
       const roundChanged = newRound !== state.currentRound;
 
@@ -109,7 +114,7 @@ function gameReducer(state: GameState, action: Action): GameState {
         players:             action.payload.players,
         roomCode:            action.payload.roomCode,
         playResult:          null,
-        // si cambió la ronda, los dados ocultos vuelven a estar disponibles
+        // roundResult NO se borra aquí (se borra al cerrar el modal)
         hiddenDiceUsed: roundChanged
           ? { red: false, blue: false }
           : state.hiddenDiceUsed,
@@ -121,18 +126,6 @@ function gameReducer(state: GameState, action: Action): GameState {
 
     case 'PLAY_RESULT':
       return { ...state, playResult: action.payload };
-
-    case 'MARK_HIDDEN_DICE_USED':
-  return {
-    ...state,
-    hiddenDiceUsed: {
-      red:  state.hiddenDiceUsed.red  || action.payload.useRed,
-      blue: state.hiddenDiceUsed.blue || action.payload.useBlue,
-    },
-  };
-
-    case 'RESET_HIDDEN_DICE_USED':
-      return { ...state, hiddenDiceUsed: { red: false, blue: false } };
 
     case 'ROUND_RESULT':
       return { ...state, roundResult: action.payload };
@@ -161,8 +154,20 @@ function gameReducer(state: GameState, action: Action): GameState {
         },
       };
 
-    case 'SET_SHAPE_SELECTED': // cuando confirma figura, nunca más se muestra
+    case 'SET_SHAPE_SELECTED':
       return { ...state, shapeSelected: true };
+
+    case 'MARK_HIDDEN_DICE_USED':
+      return {
+        ...state,
+        hiddenDiceUsed: {
+          red:  state.hiddenDiceUsed.red  || action.payload.useRed,
+          blue: state.hiddenDiceUsed.blue || action.payload.useBlue,
+        },
+      };
+
+    case 'RESET_HIDDEN_DICE_USED':
+      return { ...state, hiddenDiceUsed: { red: false, blue: false } };
 
     default:
       return state;
@@ -183,7 +188,7 @@ interface GameContextValue {
   resetGame:         () => void;
   setPlayerShape:    (playerId: string, shape: Shape) => void;
   confirmShape:      () => void;
-  clearRoundResult:  () => void; // ← nuevo
+  clearRoundResult:  () => void;
 }
 
 const GameContext = createContext<GameContextValue | null>(null);
@@ -293,10 +298,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
     socketService.makePrediction(card);
   }, []);
 
-const selectDice = useCallback((w: number[], r: boolean, b: boolean) => {
-  socketService.selectDice(w, r, b);
-  dispatch({ type: 'MARK_HIDDEN_DICE_USED', payload: { useRed: r, useBlue: b } });
-}, []);
+  // selectDice ahora hace DOS cosas:
+  //   1. Manda la jugada al servidor.
+  //   2. Marca los dados ocultos como usados en el state local
+  //      (para que la UI los oculte en las siguientes jugadas de la ronda).
+  const selectDice = useCallback((w: number[], r: boolean, b: boolean) => {
+    socketService.selectDice(w, r, b);
+    dispatch({ type: 'MARK_HIDDEN_DICE_USED', payload: { useRed: r, useBlue: b } });
+  }, []);
 
   const clearError = useCallback(() => {
     dispatch({ type: 'CLEAR_ERROR' });

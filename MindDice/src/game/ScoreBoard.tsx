@@ -51,18 +51,35 @@ const diceStyles = StyleSheet.create({
 });
 
 // ── Tómbola oculta ───────────────────────────────────────────────────────────
-function HiddenTombs({ isMe, hiddenDice }: {
-  isMe: boolean;
-  hiddenDice: { red: number; blue: number } | null;
+function HiddenTombs({
+  isMe,
+  hiddenDice,
+  hiddenDiceUsed,
+}: {
+  isMe:           boolean;
+  hiddenDice:     { red: number; blue: number } | null;
+  hiddenDiceUsed: { red: boolean; blue: boolean };
 }) {
+  // Para los demás jugadores: siempre se ven los dos con "?".
+  // Para mí: oculto la tómbola si ya la usé en esta ronda.
+  const showRed  = !isMe || !hiddenDiceUsed.red;
+  const showBlue = !isMe || !hiddenDiceUsed.blue;
+
+  // Si soy yo y ya usé las dos, no muestro nada (ni la fila vacía).
+  if (isMe && hiddenDiceUsed.red && hiddenDiceUsed.blue) return null;
+
   return (
     <View style={tombStyles.row}>
-      <View style={[tombStyles.tomb, { backgroundColor: 'rgba(180,30,30,0.3)', borderColor: '#aa2222' }]}>
-        <Text style={tombStyles.val}>{isMe && hiddenDice ? hiddenDice.red : '?'}</Text>
-      </View>
-      <View style={[tombStyles.tomb, { backgroundColor: 'rgba(30,80,200,0.3)', borderColor: '#2255cc' }]}>
-        <Text style={tombStyles.val}>{isMe && hiddenDice ? hiddenDice.blue : '?'}</Text>
-      </View>
+      {showRed && (
+        <View style={[tombStyles.tomb, { backgroundColor: 'rgba(180,30,30,0.3)', borderColor: '#aa2222' }]}>
+          <Text style={tombStyles.val}>{isMe && hiddenDice ? hiddenDice.red : '?'}</Text>
+        </View>
+      )}
+      {showBlue && (
+        <View style={[tombStyles.tomb, { backgroundColor: 'rgba(30,80,200,0.3)', borderColor: '#2255cc' }]}>
+          <Text style={tombStyles.val}>{isMe && hiddenDice ? hiddenDice.blue : '?'}</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -75,19 +92,20 @@ const tombStyles = StyleSheet.create({
 
 // ── Jugador en la mesa ───────────────────────────────────────────────────────
 function PlayerSlot({
-  player, shape, isMe, hiddenDice,
+  player, shape, isMe, hiddenDice, hiddenDiceUsed,
   isCurrentTurn, usedIndices = [],
 }: {
-  player:        Player;
-  shape:         Shape | null;
-  isMe:          boolean;
-  hiddenDice:    { red: number; blue: number } | null;
-  isCurrentTurn: boolean;
-  usedIndices?:  number[];
+  player:         Player;
+  shape:          Shape | null;
+  isMe:           boolean;
+  hiddenDice:     { red: number; blue: number } | null;
+  hiddenDiceUsed: { red: boolean; blue: boolean };
+  isCurrentTurn:  boolean;
+  usedIndices?:   number[];
 }) {
   const shapeColor = shape ? SHAPE_COLOR[shape] : '#888';
 
-  // Filtra los dados ya usados
+  // Filtra los dados blancos ya usados
   const remainingDice = player.white_dice.filter((_, i) => !usedIndices.includes(i));
 
   return (
@@ -99,7 +117,11 @@ function PlayerSlot({
       <DiceRow dice={remainingDice} />
 
       {/* Tómbolas ocultas */}
-      <HiddenTombs isMe={isMe} hiddenDice={hiddenDice} />
+      <HiddenTombs
+        isMe={isMe}
+        hiddenDice={hiddenDice}
+        hiddenDiceUsed={hiddenDiceUsed}
+      />
 
       {/* Nombre + figura */}
       <View style={slotStyles.nameRow}>
@@ -168,13 +190,14 @@ interface Props {
   playerShapes:        Record<string, Shape>;
   myPlayerId:          string | null;
   hiddenDice:          { red: number; blue: number } | null;
+  hiddenDiceUsed:      { red: boolean; blue: boolean }; // ← nuevo
   currentTurnPlayerId: string;
   usedDiceIndices?:    Record<string, number[]>;
 }
 
 export default function ScoreBoard({
   players, playerShapes, myPlayerId,
-  hiddenDice, currentTurnPlayerId, usedDiceIndices = {},
+  hiddenDice, hiddenDiceUsed, currentTurnPlayerId, usedDiceIndices = {},
 }: Props) {
   const top    = players.slice(0, 2);
   const bottom = players.slice(2, 4);
@@ -191,6 +214,7 @@ export default function ScoreBoard({
             shape={playerShapes[p.id] ?? null}
             isMe={p.id === myPlayerId}
             hiddenDice={p.id === myPlayerId ? hiddenDice : null}
+            hiddenDiceUsed={hiddenDiceUsed}
             isCurrentTurn={p.id === currentTurnPlayerId}
             usedIndices={usedDiceIndices[p.id] ?? []}
           />
@@ -214,6 +238,7 @@ export default function ScoreBoard({
             shape={playerShapes[p.id] ?? null}
             isMe={p.id === myPlayerId}
             hiddenDice={p.id === myPlayerId ? hiddenDice : null}
+            hiddenDiceUsed={hiddenDiceUsed}
             isCurrentTurn={p.id === currentTurnPlayerId}
             usedIndices={usedDiceIndices[p.id] ?? []}
           />

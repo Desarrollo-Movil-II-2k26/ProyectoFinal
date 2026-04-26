@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { GameProvider, useGame } from './src/store/GameContext';
-import { socketService } from './src/services/SocketService'; // ← FIX 1: import agregado
+import { socketService } from './src/services/SocketService'; 
 
 import WelcomeView       from './src/views/WelcomeView';
 import HomeView          from './src/views/HomeView';
@@ -72,6 +72,7 @@ function AppNavigator() {
           <HomeView
             playerName={route.params.playerName}
             onCrearSala={async () => {
+              //Para conectar con el servidor
               await connect();
               createRoom(route.params.playerName);
               navigation.navigate('Lobby', {
@@ -80,6 +81,7 @@ function AppNavigator() {
               });
             }}
             onUnirse={async (codigo) => {
+              //Para conectar con el servidor
               await connect();
               joinRoom(codigo, route.params.playerName);
               navigation.navigate('Lobby', {
@@ -107,8 +109,8 @@ function AppNavigator() {
               });
             }}
             onSalir={() => {
-              socketService.disconnect(); // ← FIX 3: cierra WebSocket → servidor elimina sala
-              resetGame();               // ← FIX 3: limpia estado local
+              socketService.leaveRoom(); // ← avisa al servidor que salió de la sala
+              resetGame();              // ← FIX 3: limpia estado local
               navigation.navigate('Home', { playerName: route.params.playerName });
             }}
             onVerJuego={() => navigation.navigate('Game', {
