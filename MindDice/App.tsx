@@ -33,6 +33,8 @@ function AppNavigator() {
   const playerNameRef = useRef('');  // ← agrega esto
 
   useEffect(() => {
+    if (state.roomDeleted) return;  // ← nueva guarda
+    
     if (
       state.phase === 'MakingPredictions' ||
       state.phase === 'SelectingDice' ||

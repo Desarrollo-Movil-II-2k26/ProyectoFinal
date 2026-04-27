@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef} from 'react';
 import { ScrollView, StyleSheet, SafeAreaView, View, Text, TouchableOpacity, Image, Modal, Alert } from 'react-native';
 import { useGame } from '../store/GameContext';
 import MedievalBackground from '../layout/MedievalBackground';
@@ -26,20 +26,36 @@ export default function GameView({ onGoToDiceSelection, onSalir }: Props) {
     playerShapes, shapeSelected,
     roomDeleted,
   } = state;
+  const alertShownRef = useRef(false);
 
   const myPlayer = players.find(p => p.id === playerId) ?? players[0];
   const isMyTurn = currentTurnPlayerId === playerId;
 
   // ── Si la sala fue eliminada, notificar y redirigir ──
   useEffect(() => {
-    if (roomDeleted) {
+    if (roomDeleted && !alertShownRef.current) {
+      alertShownRef.current = true;
       Alert.alert(
         '⚔ SALA ELIMINADA',
         'La partida ha terminado porque un jugador abandonó la sala.',
-        [{ text: 'ACEPTAR', onPress: onSalir }]
+        [{
+          text: 'ACEPTAR',
+          onPress: () => {
+            resetGame();      // ← limpia roomDeleted y phase
+            onSalir();        // ← navega a Home
+          }
+        }],
+        { cancelable: false }
       );
     }
   }, [roomDeleted]);
+
+  // Resetea la bandera si el componente se desmonta
+  useEffect(() => {
+    return () => {
+      alertShownRef.current = false;
+    };
+  }, []);
 
   const handlePrediction = (card: PredictionCard) => {
     makePrediction(card);
@@ -70,9 +86,6 @@ export default function GameView({ onGoToDiceSelection, onSalir }: Props) {
         <TouchableOpacity style={styles.cornerTR} onPress={() => {
           leaveRoom();
           onSalir();
-          setTimeout(() => {
-            resetGame();
-          }, 100);
         }}>
           <Image source={require('../assets/images/bg_exit.png')} style={{ width: 80, height: 80 }} />
         </TouchableOpacity>
