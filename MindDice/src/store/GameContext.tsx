@@ -191,19 +191,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
         case 'game_over':
           dispatch({ type: 'GAME_OVER', payload: { finalScores: message.final_scores, winnerName: message.winner_name } });
           break;
-        case 'error':
-          // Detectar si la sala fue eliminada o un jugador abandonó
-          if (
-            message.message.toLowerCase().includes('eliminada') ||
-            message.message.toLowerCase().includes('lider abandono') ||
-            message.message.toLowerCase().includes('abandonó la sala') ||
-            message.message.toLowerCase().includes('partida ha terminado')
-          ) {
-            console.log('[SALA ELIMINADA]', message.message);
-            dispatch({ type: 'ROOM_DELETED' });
-          } else {
-            dispatch({ type: 'SET_ERROR', payload: message.message });
-          }
+          case 'error':
+          console.log('[ERROR WS]', message.message);
+          dispatch({ type: 'ROOM_DELETED' });
           break;
       }
     });

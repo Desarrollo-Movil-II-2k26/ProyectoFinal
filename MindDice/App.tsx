@@ -94,7 +94,6 @@ function AppNavigator() {
             }}
             onSalir={() => {
               socketService.leaveRoom();
-              resetGame();
               navigation.navigate('Home', { playerName: route.params.playerName });
             }}
             onVerJuego={() => navigation.navigate('Game', { playerName: route.params.playerName, roomCode: state.roomCode ?? route.params.roomCode })}
