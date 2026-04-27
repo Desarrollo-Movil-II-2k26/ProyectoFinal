@@ -17,7 +17,7 @@ interface Props {
 }
 
 export default function GameView({ onGoToDiceSelection, onSalir }: Props) {
-  const { state, makePrediction, setPlayerShape, confirmShape, clearRoundResult, clearPlayResult, leaveRoom } = useGame();
+  const { state, makePrediction, setPlayerShape, confirmShape, clearRoundResult, clearPlayResult, leaveRoom, resetGame } = useGame();
   const {
     phase, currentRound, currentPlay,
     currentTurnPlayerId, players, playerId,
@@ -52,12 +52,12 @@ export default function GameView({ onGoToDiceSelection, onSalir }: Props) {
     });
   }
 
-  // ── Auto-cierre del modal de jugada a los 3.5 segundos ──
+  // ── Auto-cierre del modal de jugada a los 5 segundos ──
   useEffect(() => {
     if (playResult) {
       const timer = setTimeout(() => {
         clearPlayResult();
-      }, 3500);
+      }, 5000);
       return () => clearTimeout(timer);
     }
   }, [playResult]);
@@ -70,6 +70,9 @@ export default function GameView({ onGoToDiceSelection, onSalir }: Props) {
         <TouchableOpacity style={styles.cornerTR} onPress={() => {
           leaveRoom();
           onSalir();
+          setTimeout(() => {
+            resetGame();
+          }, 100);
         }}>
           <Image source={require('../assets/images/bg_exit.png')} style={{ width: 80, height: 80 }} />
         </TouchableOpacity>
