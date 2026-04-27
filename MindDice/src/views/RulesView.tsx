@@ -223,8 +223,9 @@ export default function RulesView({ onVolver }: Props) {
     <MedievalBackground variant="home">
       <SafeAreaView style={G.safe}>
 
-       
-        <Header title="REGLAS DEL JUEGO" onBack={onVolver} />
+       <View style={{ marginTop: 30, right: 35}}> 
+          <Header title="REGLAS DEL JUEGO" onBack={onVolver} />
+       </View>
 
         <ScrollView
           contentContainerStyle={styles.scroll}
@@ -318,10 +319,10 @@ const sStyles = StyleSheet.create({
     paddingVertical: 14,
     gap: 10,
     borderBottomWidth: 0.5,
-    borderBottomColor: 'rgba(180,140,60,0.2)',
+    borderBottomColor: 'rgba(180,140,60,0.2)', 
   },
   icon:  { fontSize: 18 },
-  title: { flex: 1, color: COLORS.gold, fontSize: FONTS.sizes.md, fontWeight: '700', letterSpacing: 1.5 },
+  title: { flex: 1, color: COLORS.gold, fontSize: FONTS.sizes.md, fontWeight: '700', letterSpacing: 1.5,   },
   arrow: { color: COLORS.gold_muted, fontSize: FONTS.sizes.sm },
 
   // Bullet

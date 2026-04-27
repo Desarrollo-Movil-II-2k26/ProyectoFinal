@@ -45,6 +45,7 @@ interface GameState {
   error:               string | null;
   playerShapes:        Record<string, Shape>;
   shapeSelected:       boolean;
+  roomDeleted:         boolean;
 }
 
 const initialState: GameState = {
@@ -65,6 +66,7 @@ const initialState: GameState = {
   error:               null,
   playerShapes:        {},
   shapeSelected:       false,
+  roomDeleted:         false,
 };
 
 type Action =
@@ -79,6 +81,7 @@ type Action =
   | { type: 'SET_ERROR';               payload: string }
   | { type: 'CLEAR_ERROR' }
   | { type: 'RESET' }
+  | { type: 'ROOM_DELETED' }
   | { type: 'SET_PLAYER_SHAPE';        payload: { playerId: string; shape: Shape } }
   | { type: 'CLEAR_ROUND_RESULT' }
   | { type: 'CLEAR_PLAY_RESULT' }
@@ -124,6 +127,8 @@ function gameReducer(state: GameState, action: Action): GameState {
       return { ...state, error: action.payload };
     case 'CLEAR_ERROR':
       return { ...state, error: null };
+    case 'ROOM_DELETED':
+      return { ...initialState, connected: state.connected, shapeSelected: state.shapeSelected, roomDeleted: true };
     case 'RESET':
       return { ...initialState, connected: state.connected, shapeSelected: state.shapeSelected };
     case 'SET_PLAYER_SHAPE':
@@ -177,7 +182,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
           dispatch({ type: 'HIDDEN_DICE', payload: { red: message.red, blue: message.blue } });
           break;
         case 'play_result':
-          console.log('[PLAY_RESULT recibido]', message.results); // 👈 para verificar
+          console.log('[PLAY_RESULT recibido]', message.results);
           dispatch({ type: 'PLAY_RESULT', payload: message.results });
           break;
         case 'round_result':
@@ -187,7 +192,18 @@ export function GameProvider({ children }: { children: ReactNode }) {
           dispatch({ type: 'GAME_OVER', payload: { finalScores: message.final_scores, winnerName: message.winner_name } });
           break;
         case 'error':
-          dispatch({ type: 'SET_ERROR', payload: message.message });
+          // Detectar si la sala fue eliminada o un jugador abandonó
+          if (
+            message.message.toLowerCase().includes('eliminada') ||
+            message.message.toLowerCase().includes('lider abandono') ||
+            message.message.toLowerCase().includes('abandonó la sala') ||
+            message.message.toLowerCase().includes('partida ha terminado')
+          ) {
+            console.log('[SALA ELIMINADA]', message.message);
+            dispatch({ type: 'ROOM_DELETED' });
+          } else {
+            dispatch({ type: 'SET_ERROR', payload: message.message });
+          }
           break;
       }
     });
@@ -201,7 +217,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     return () => { socketService.disconnect(); };
   }, []);
 
-  const connect = useCallback(async () => {
+  const connect        = useCallback(async () => {
     try {
       await socketService.connect();
       dispatch({ type: 'SET_CONNECTED', payload: true });
@@ -210,16 +226,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const createRoom    = useCallback((playerName: string) => { socketService.createRoom(playerName); }, []);
-  const joinRoom      = useCallback((roomCode: string, playerName: string) => { socketService.joinRoom(roomCode, playerName); }, []);
-  const startGame     = useCallback(() => { socketService.startGame(); }, []);
-  const leaveRoom     = useCallback(() => { socketService.leaveRoom(); dispatch({ type: 'RESET' }); }, []);
+  const createRoom     = useCallback((playerName: string) => { socketService.createRoom(playerName); }, []);
+  const joinRoom       = useCallback((roomCode: string, playerName: string) => { socketService.joinRoom(roomCode, playerName); }, []);
+  const startGame      = useCallback(() => { socketService.startGame(); }, []);
+  const leaveRoom      = useCallback(() => { socketService.leaveRoom(); dispatch({ type: 'RESET' }); }, []);
   const makePrediction = useCallback((card: 'Zero' | 'Min' | 'More' | 'Max') => { socketService.makePrediction(card); }, []);
-  const selectDice    = useCallback((w: number[], r: boolean, b: boolean) => { socketService.selectDice(w, r, b); dispatch({ type: 'MARK_HIDDEN_DICE_USED', payload: { useRed: r, useBlue: b } }); }, []);
-  const clearError    = useCallback(() => { dispatch({ type: 'CLEAR_ERROR' }); }, []);
-  const resetGame     = useCallback(() => { dispatch({ type: 'RESET' }); }, []);
+  const selectDice     = useCallback((w: number[], r: boolean, b: boolean) => { socketService.selectDice(w, r, b); dispatch({ type: 'MARK_HIDDEN_DICE_USED', payload: { useRed: r, useBlue: b } }); }, []);
+  const clearError     = useCallback(() => { dispatch({ type: 'CLEAR_ERROR' }); }, []);
+  const resetGame      = useCallback(() => { dispatch({ type: 'RESET' }); }, []);
   const setPlayerShape = useCallback((playerId: string, shape: Shape) => { dispatch({ type: 'SET_PLAYER_SHAPE', payload: { playerId, shape } }); }, []);
-  const confirmShape  = useCallback(() => { dispatch({ type: 'SET_SHAPE_SELECTED' }); }, []);
+  const confirmShape   = useCallback(() => { dispatch({ type: 'SET_SHAPE_SELECTED' }); }, []);
   const clearRoundResult = useCallback(() => { dispatch({ type: 'CLEAR_ROUND_RESULT' }); }, []);
   const clearPlayResult  = useCallback(() => { dispatch({ type: 'CLEAR_PLAY_RESULT' }); }, []);
 

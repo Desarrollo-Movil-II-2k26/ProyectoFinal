@@ -1,10 +1,11 @@
-import React from 'react';
-import { Text, StyleSheet, SafeAreaView, TouchableOpacity, View, ImageBackground } from 'react-native';
+import React, { useEffect } from 'react';
+import { Text, StyleSheet, SafeAreaView, View, Alert } from 'react-native';
 import MedievalBackground from '../layout/MedievalBackground';
 import Header from '../layout/Header';
 import RoomCode from '../lobby/RoomCode';
 import PlayerList from '../lobby/PlayerList';
 import StartGameButton from '../lobby/StartGameButton';
+import { useGame } from '../store/GameContext';
 import { COLORS, FONTS } from '../styles/Theme';
 import { G } from '../styles/GlobalStyles';
 import { Player } from '../types/GameTypes';
@@ -19,6 +20,19 @@ interface Props {
 }
 
 export default function LobbyView({ roomCode, players, isLeader, onIniciar, onSalir, onVerJuego }: Props) {
+  const { state } = useGame();
+
+  // ── Si la sala fue eliminada, notificar y redirigir ──
+  useEffect(() => {
+    if (state.roomDeleted) {
+      Alert.alert(
+        '⚔ SALA ELIMINADA',
+        'La partida ha terminado porque un jugador abandonó la sala.',
+        [{ text: 'ACEPTAR', onPress: onSalir }]
+      );
+    }
+  }, [state.roomDeleted]);
+
   return (
     <MedievalBackground variant="home">
       <SafeAreaView style={G.safe}>
@@ -28,9 +42,6 @@ export default function LobbyView({ roomCode, players, isLeader, onIniciar, onSa
         <RoomCode code={roomCode} />
         <PlayerList players={players} />
         <StartGameButton isLeader={isLeader} playerCount={players.length} onIniciar={onIniciar} />
-        {/*<TouchableOpacity style={styles.verBtn} onPress={onVerJuego} activeOpacity={0.8}>
-          <Text style={styles.verBtnText}>VER JUEGO →</Text>
-        </TouchableOpacity>*/}
       </SafeAreaView>
     </MedievalBackground>
   );
